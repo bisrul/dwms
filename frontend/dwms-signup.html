@@ -250,7 +250,7 @@
     // fetch('/api/register', { method: 'POST', body: JSON.stringify({ firstName, lastName, email, org, role, password }) })
     //   .then(res => res.json())
     //   .then(data => { window.location.href = 'dwms-login.html'; });
-    fetch('http://localhost:5000/api/auth/register', {
+    fetch('https://dwms-backend-sqix.onrender.com/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ firstName, lastName, email, org, role, password })
