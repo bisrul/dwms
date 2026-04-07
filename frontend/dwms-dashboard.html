@@ -299,6 +299,11 @@
       plugins: { legend: { display: false } }
     }
   });
+  fetch('https://dwms-backend-sqix.onrender.com/api/auth/dashboard', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ firstName, lastName, email, org, role, password })
+    })
 
   window.onload = function() {
     if (user.firstName) {
