@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DWMS — Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; }
+    
+    .app { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar { width: 200px; background: #0C447C; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; }
+    .sidebar-brand { display: flex; align-items: center; gap: 8px; padding: 1.25rem 1rem; border-bottom: 0.5px solid rgba(255,255,255,0.1); }
+    .sidebar-brand-icon { width: 28px; height: 28px; background: #378ADD; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+    .sidebar-brand-icon svg { width: 16px; height: 16px; }
+    .sidebar-brand-name { font-size: 13px; font-weight: 600; color: #fff; }
+    .sidebar-nav { flex: 1; padding: 0.75rem 0; overflow-y: auto; }
+    .nav-section { font-size: 10px; color: #85B7EB; padding: 0.75rem 1rem 0.25rem; letter-spacing: 0.8px; text-transform: uppercase; }
+    .nav-item { display: flex; align-items: center; gap: 8px; padding: 0.5rem 1rem; font-size: 13px; color: #B5D4F4; cursor: pointer; transition: background 0.15s; text-decoration: none; }
+    .nav-item:hover { background: rgba(255,255,255,0.07); }
+    .nav-item.active { background: rgba(255,255,255,0.12); color: #fff; border-right: 2px solid #378ADD; }
+    .nav-item svg { width: 15px; height: 15px; opacity: 0.8; flex-shrink: 0; }
+    .sidebar-footer { padding: 1rem; border-top: 0.5px solid rgba(255,255,255,0.1); }
+    .avatar-row { display: flex; align-items: center; gap: 8px; }
+    .avatar { width: 28px; height: 28px; border-radius: 50%; background: #378ADD; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #fff; }
+    .avatar-name { font-size: 12px; color: #fff; font-weight: 600; }
+    .avatar-role { font-size: 10px; color: #85B7EB; }
+
+    /* ── Main ── */
+    .main { flex: 1; margin-left: 200px; display: flex; flex-direction: column; min-height: 100vh; }
+    .topbar { background: #fff; border-bottom: 0.5px solid #e0e0de; padding: 0.75rem 1.5rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+    .topbar-title { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+    .topbar-sub { font-size: 12px; color: #888; margin-top: 1px; }
+    .topbar-right { display: flex; align-items: center; gap: 10px; }
+    .badge { font-size: 11px; padding: 3px 8px; border-radius: 20px; background: #E6F1FB; color: #185FA5; font-weight: 600; }
+    .btn-sm { font-size: 12px; padding: 5px 12px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; color: #1a1a1a; cursor: pointer; font-family: inherit; }
+    .btn-sm:hover { background: #f5f5f3; }
+
+    /* ── Content ── */
+    .content { flex: 1; padding: 1.25rem 1.5rem; }
+
+    /* ── KPI Cards ── */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.25rem; }
+    .kpi-card { background: #fff; border: 0.5px solid #e0e0de; border-radius: 12px; padding: 1rem; }
+    .kpi-label { font-size: 11px; color: #888; margin-bottom: 6px; }
+    .kpi-value { font-size: 22px; font-weight: 600; color: #1a1a1a; }
+    .kpi-change { font-size: 11px; margin-top: 4px; }
+    .kpi-change.up { color: #27500A; }
+    .kpi-change.down { color: #791F1F; }
+
+    /* ── Charts Row ── */
+    .charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 1.25rem; }
+    .chart-card { background: #fff; border: 0.5px solid #e0e0de; border-radius: 12px; padding: 1rem; }
+    .chart-title { font-size: 13px; font-weight: 600; color: #1a1a1a; }
+    .chart-sub { font-size: 11px; color: #888; margin-top: 2px; margin-bottom: 0.75rem; }
+    .legend { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+    .legend-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #666; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+
+    /* ── Bottom Row ── */
+    .bottom-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { text-align: left; font-weight: 600; color: #888; padding: 6px 8px; border-bottom: 0.5px solid #e0e0de; }
+    td { padding: 7px 8px; color: #1a1a1a; border-bottom: 0.5px solid #e0e0de; }
+    tr:last-child td { border-bottom: none; }
+    .status-pill { font-size: 10px; padding: 2px 7px; border-radius: 20px; font-weight: 600; }
+    .status-pill.active { background: #EAF3DE; color: #27500A; }
+    .status-pill.idle { background: #FAEEDA; color: #633806; }
+    .status-pill.error { background: #FCEBEB; color: #791F1F; }
+
+    /* ── Activity ── */
+    .activity-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 0.5px solid #e0e0de; }
+    .activity-item:last-child { border-bottom: none; }
+    .act-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+    .act-text { font-size: 12px; color: #1a1a1a; line-height: 1.4; }
+    .act-time { font-size: 11px; color: #888; margin-top: 1px; }
+
+    @media (max-width: 900px) {
+      .sidebar { width: 60px; }
+      .sidebar-brand-name, .nav-section, .avatar-info { display: none; }
+      .main { margin-left: 60px; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .charts-row, .bottom-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <script>
+      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (!token) {
+        window.location.href = 'dwms-login.html';
+      }
+    </script>
+<div class="app">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-icon">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" fill="white" opacity="0.9"/><rect x="9" y="1" width="6" height="6" rx="1" fill="white" opacity="0.6"/><rect x="1" y="9" width="6" height="6" rx="1" fill="white" opacity="0.6"/><rect x="9" y="9" width="6" height="6" rx="1" fill="white" opacity="0.35"/></svg>
+      </div>
+      <span class="sidebar-brand-name">DWMS</span>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-section">Main</div>
+      <a href="#" class="nav-item active">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" fill="currentColor"/><rect x="9" y="1" width="6" height="6" rx="1" fill="currentColor" opacity="0.5"/><rect x="1" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.5"/><rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.3"/></svg>
+        Dashboard
+      </a>
+      <a href="dwms-data-resource.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Data sources
+      </a>
+      <a href="dwms-etl-pipelines.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M8 2v4l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/></svg>
+        ETL pipelines
+      </a>
+      <a href="dwms-schema-manager.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="12" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
+        Schema manager
+      </a>
+      <a href="dwms-query-editor.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M5 7h6M5 10h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Query editor
+      </a>
+      <div class="nav-section">Admin</div>
+      <a href="dwms-user-management.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M2 14c0-3 2.7-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Users
+      </a>
+      <a href="dwms-setting.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 2v1.5M8 12.5V14M2 8h1.5M12.5 8H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Settings
+      </a>
+    </div>
+    <div class="sidebar-footer">
+      <div class="avatar-row">
+        <div class="avatar" id="userAvatar">AD</div>
+        <div class="avatar-info">
+          <div class="avatar-name" id="userName">Admin</div>
+          <div class="avatar-role" id="userRole">Administrator</div>
+        </div>
+      </div>
+      <div style="margin-top:8px;">
+        <button onclick="logout()" style="width:100%;font-size:11px;padding:5px;border-radius:6px;border:0.5px solid rgba(255,255,255,0.2);background:transparent;color:#B5D4F4;cursor:pointer;">
+          Sign out
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">Dashboard</div>
+        <div class="topbar-sub">Last updated: today at 09:41</div>
+      </div>
+      <div class="topbar-right">
+        <span class="badge">Live</span>
+        <button class="btn-sm">Export report</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- KPI Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Total records</div>
+          <div class="kpi-value">4.82M</div>
+          <div class="kpi-change up">+12.4% vs last month</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Active pipelines</div>
+          <div class="kpi-value">34</div>
+          <div class="kpi-change up">+3 this week</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Storage used</div>
+          <div class="kpi-value">4.2TB</div>
+          <div class="kpi-change down">84% of quota</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Avg query time</div>
+          <div class="kpi-value">1.3s</div>
+          <div class="kpi-change up">-0.2s improvement</div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-title">Data ingestion volume</div>
+          <div class="chart-sub">Records loaded per month (millions)</div>
+          <div class="legend">
+            <span class="legend-item"><span class="legend-dot" style="background:#185FA5;"></span>Loaded</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#97C459;"></span>Processed</span>
+          </div>
+          <div style="position:relative;height:220px;">
+            <canvas id="lineChart"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Data sources</div>
+          <div class="chart-sub">By type</div>
+          <div class="legend">
+            <span class="legend-item"><span class="legend-dot" style="background:#185FA5;"></span>SQL 45%</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#1D9E75;"></span>API 30%</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#BA7517;"></span>CSV 25%</span>
+          </div>
+          <div style="position:relative;height:220px;">
+            <canvas id="doughnutChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Row -->
+      <div class="bottom-row">
+        <div class="chart-card">
+          <div class="chart-title" style="margin-bottom:0.75rem;">Pipeline status</div>
+          <table>
+            <thead>
+              <tr><th>Pipeline</th><th>Source</th><th>Records</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Sales ETL</td><td>PostgreSQL</td><td>1.2M</td><td><span class="status-pill active">Active</span></td></tr>
+              <tr><td>CRM Sync</td><td>REST API</td><td>340K</td><td><span class="status-pill active">Active</span></td></tr>
+              <tr><td>Inventory</td><td>CSV Upload</td><td>88K</td><td><span class="status-pill idle">Idle</span></td></tr>
+              <tr><td>Analytics</td><td>BigQuery</td><td>2.1M</td><td><span class="status-pill active">Active</span></td></tr>
+              <tr><td>Logs ETL</td><td>S3 Bucket</td><td>560K</td><td><span class="status-pill error">Error</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title" style="margin-bottom:0.75rem;">Recent activity</div>
+          <div>
+            <div class="activity-item">
+              <div class="act-dot" style="background:#639922;"></div>
+              <div><div class="act-text">Sales ETL pipeline completed successfully</div><div class="act-time">2 minutes ago</div></div>
+            </div>
+            <div class="activity-item">
+              <div class="act-dot" style="background:#E24B4A;"></div>
+              <div><div class="act-text">Logs ETL failed — connection timeout</div><div class="act-time">18 minutes ago</div></div>
+            </div>
+            <div class="activity-item">
+              <div class="act-dot" style="background:#378ADD;"></div>
+              <div><div class="act-text">New data source added: BigQuery prod</div><div class="act-time">1 hour ago</div></div>
+            </div>
+            <div class="activity-item">
+              <div class="act-dot" style="background:#639922;"></div>
+              <div><div class="act-text">CRM Sync processed 340K records</div><div class="act-time">3 hours ago</div></div>
+            </div>
+            <div class="activity-item">
+              <div class="act-dot" style="background:#BA7517;"></div>
+              <div><div class="act-text">Storage quota at 84% — consider expanding</div><div class="act-time">5 hours ago</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  new Chart(document.getElementById('lineChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'],
+      datasets: [
+        { label: 'Loaded', data: [2.1,2.4,2.8,3.1,2.9,3.5,3.8,4.2,4.8], backgroundColor: '#185FA5', borderRadius: 3, barPercentage: 0.5 },
+        { label: 'Processed', data: [2.0,2.3,2.7,3.0,2.8,3.4,3.7,4.0,4.6], backgroundColor: '#97C459', borderRadius: 3, barPercentage: 0.5 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+        y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11 }, callback: v => v + 'M' } }
+      }
+    }
+  });
+
+  new Chart(document.getElementById('doughnutChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['SQL', 'API', 'CSV'],
+      datasets: [{ data: [45, 30, 25], backgroundColor: ['#185FA5','#1D9E75','#BA7517'], borderWidth: 0, hoverOffset: 4 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '68%',
+      plugins: { legend: { display: false } }
+    }
+  });
+
+  window.onload = function() {
+    if (user.firstName) {
+      const initials = user.firstName[0] + (user.lastName ? user.lastName[0] : '');
+      document.getElementById('userAvatar').textContent = initials.toUpperCase();
+      document.getElementById('userName').textContent = user.firstName + ' ' + user.lastName;
+      document.getElementById('userRole').textContent = user.role || 'Viewer';
+    }
+  }
+
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = 'dwms-login.html';
+    }
+</script>
+</body>
+</html>

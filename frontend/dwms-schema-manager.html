@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DWMS — Schema Manager</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; }
+    .app { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar { width: 200px; background: #0C447C; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; }
+    .sidebar-brand { display: flex; align-items: center; gap: 8px; padding: 1.25rem 1rem; border-bottom: 0.5px solid rgba(255,255,255,0.1); }
+    .brand-icon { width: 28px; height: 28px; background: #378ADD; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+    .brand-icon svg { width: 16px; height: 16px; }
+    .brand-name { font-size: 13px; font-weight: 600; color: #fff; }
+    .sidebar-nav { flex: 1; padding: 0.75rem 0; overflow-y: auto; }
+    .nav-section { font-size: 10px; color: #85B7EB; padding: 0.75rem 1rem 0.25rem; letter-spacing: 0.8px; text-transform: uppercase; }
+    .nav-item { display: flex; align-items: center; gap: 8px; padding: 0.5rem 1rem; font-size: 13px; color: #B5D4F4; cursor: pointer; text-decoration: none; transition: background 0.15s; }
+    .nav-item:hover { background: rgba(255,255,255,0.07); }
+    .nav-item.active { background: rgba(255,255,255,0.12); color: #fff; border-right: 2px solid #378ADD; }
+    .nav-item svg { width: 15px; height: 15px; opacity: 0.8; flex-shrink: 0; }
+    .sidebar-footer { padding: 1rem; border-top: 0.5px solid rgba(255,255,255,0.1); }
+    .avatar-row { display: flex; align-items: center; gap: 8px; }
+    .avatar { width: 28px; height: 28px; border-radius: 50%; background: #378ADD; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #fff; }
+    .avatar-name { font-size: 12px; color: #fff; font-weight: 600; }
+    .avatar-role { font-size: 10px; color: #85B7EB; }
+
+    /* ── Main ── */
+    .main { flex: 1; margin-left: 200px; display: flex; flex-direction: column; min-height: 100vh; }
+    .topbar { background: #fff; border-bottom: 0.5px solid #e0e0de; padding: 0.75rem 1.5rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+    .topbar-title { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+    .topbar-sub { font-size: 12px; color: #888; margin-top: 1px; }
+    .topbar-right { display: flex; gap: 8px; align-items: center; }
+    .btn-primary { font-size: 12px; padding: 6px 14px; border-radius: 8px; border: none; background: #185FA5; color: #fff; cursor: pointer; font-family: inherit; font-weight: 600; }
+    .btn-primary:hover { background: #0C447C; }
+    .btn-sm { font-size: 11px; padding: 4px 10px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; color: #1a1a1a; cursor: pointer; font-family: inherit; }
+    .btn-sm:hover { background: #f5f5f3; }
+
+    /* ── Content ── */
+    .content { padding: 1.25rem 1.5rem; }
+    .schema-tabs { display: flex; gap: 8px; margin-bottom: 1.25rem; }
+    .tab { font-size: 12px; padding: 5px 14px; border-radius: 20px; border: 0.5px solid #ccc; background: #fff; color: #666; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+    .tab:hover { background: #f5f5f3; }
+    .tab.active { background: #185FA5; color: #fff; border-color: #185FA5; }
+    .schema-type-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; margin-bottom: 1rem; }
+    .schema-type-badge.star { background: #E6F1FB; color: #0C447C; }
+    .schema-type-badge.snow { background: #E1F5EE; color: #085041; }
+
+    /* ── Table Cards ── */
+    .tables-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.25rem; }
+    .table-card { background: #fff; border: 0.5px solid #e0e0de; border-radius: 12px; overflow: hidden; cursor: pointer; transition: border-color 0.15s; }
+    .table-card:hover { border-color: #aaa; }
+    .table-card.selected { border: 1.5px solid #185FA5; }
+    .table-card.fact { border-top: 3px solid #185FA5; }
+    .table-card.dim  { border-top: 3px solid #1D9E75; }
+    .table-header { padding: 0.75rem 1rem; border-bottom: 0.5px solid #e0e0de; display: flex; align-items: center; justify-content: space-between; }
+    .table-name { font-size: 13px; font-weight: 600; color: #1a1a1a; }
+    .table-type { font-size: 10px; padding: 2px 7px; border-radius: 20px; font-weight: 600; }
+    .table-type.fact { background: #E6F1FB; color: #0C447C; }
+    .table-type.dim  { background: #E1F5EE; color: #085041; }
+    .table-fields { padding: 0.5rem 0; }
+    .field-row { display: flex; align-items: center; gap: 8px; padding: 4px 1rem; }
+    .field-key { width: 14px; height: 14px; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; flex-shrink: 0; }
+    .field-key.pk   { background: #E6F1FB; color: #0C447C; }
+    .field-key.fk   { background: #FAEEDA; color: #633806; }
+    .field-key.none { background: transparent; }
+    .field-name { font-size: 12px; color: #1a1a1a; flex: 1; }
+    .field-type { font-size: 10px; color: #888; font-family: 'Courier New', monospace; }
+
+    /* ── SQL Preview ── */
+    .sql-card { background: #fff; border: 0.5px solid #e0e0de; border-radius: 12px; padding: 1rem; }
+    .sql-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+    .sql-title { font-size: 13px; font-weight: 600; color: #1a1a1a; }
+    .sql-body { background: #1a1a1a; border-radius: 8px; padding: 1rem; font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.7; overflow-x: auto; white-space: pre; }
+    .kw  { color: #85B7EB; }
+    .cm  { color: #5F5E5A; }
+    .tb  { color: #97C459; }
+    .col { color: #EF9F27; }
+    .str { color: #F09595; }
+
+    @media (max-width: 900px) {
+      .sidebar { width: 60px; }
+      .brand-name, .nav-section, .avatar-role, .avatar-name { display: none; }
+      .main { margin-left: 60px; }
+      .tables-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .tables-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <script>
+      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (!token) {
+        window.location.href = 'dwms-login.html';
+      }
+    </script>
+<div class="app">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" fill="white" opacity="0.9"/><rect x="9" y="1" width="6" height="6" rx="1" fill="white" opacity="0.6"/><rect x="1" y="9" width="6" height="6" rx="1" fill="white" opacity="0.6"/><rect x="9" y="9" width="6" height="6" rx="1" fill="white" opacity="0.35"/></svg></div>
+      <span class="brand-name">DWMS</span>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-section">Main</div>
+      <a href="dwms-dashboard.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" fill="currentColor"/><rect x="9" y="1" width="6" height="6" rx="1" fill="currentColor" opacity="0.5"/><rect x="1" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.5"/><rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.3"/></svg>Dashboard
+      </a>
+      <a href="dwms-data-resource.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Data sources
+      </a>
+      <a href="dwms-etl-pipelines.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M8 2v4l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/></svg>ETL pipelines
+      </a>
+      <a href="#" class="nav-item active">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="12" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>Schema manager
+      </a>
+      <a href="dwms-query-editor.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M5 7h6M5 10h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Query editor
+      </a>
+      <div class="nav-section">Admin</div>
+      <a href="dwms-user-management.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M2 14c0-3 2.7-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Users
+      </a>
+      <a href="dwms-setting.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 2v1.5M8 12.5V14M2 8h1.5M12.5 8H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Settings
+      </a>
+    </div>
+    <div class="sidebar-footer">
+      <div class="avatar-row">
+        <div class="avatar" id="userAvatar">AD</div>
+        <div class="avatar-info">
+          <div class="avatar-name" id="userName">Admin</div>
+          <div class="avatar-role" id="userRole">Administrator</div>
+        </div>
+      </div>
+      <div style="margin-top:8px;">
+        <button onclick="logout()" style="width:100%;font-size:11px;padding:5px;border-radius:6px;border:0.5px solid rgba(255,255,255,0.2);background:transparent;color:#B5D4F4;cursor:pointer;">
+          Sign out
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">Schema manager</div>
+        <div class="topbar-sub">Design and manage your data warehouse tables</div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-sm" onclick="copySQL()">Copy SQL</button>
+        <button class="btn-primary" onclick="alert('Connect to your backend to add new tables!')">+ New table</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="schema-tabs">
+        <button class="tab active" onclick="switchSchema('star', this)">Star schema</button>
+        <button class="tab" onclick="switchSchema('snowflake', this)">Snowflake schema</button>
+      </div>
+
+      <div class="schema-type-badge star" id="schemaBadge">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polygon points="6,1 7.5,4.5 11,5 8.5,7.5 9,11 6,9.5 3,11 3.5,7.5 1,5 4.5,4.5" fill="#185FA5"/></svg>
+        Star schema — 1 fact table, 4 dimension tables
+      </div>
+
+      <div class="tables-grid" id="tablesGrid"></div>
+
+      <div class="sql-card">
+        <div class="sql-header">
+          <div class="sql-title">SQL preview — <span id="sqlTableName" style="color:#888;font-weight:400;">fact_sales</span></div>
+        </div>
+        <div class="sql-body" id="sqlBody"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const schemas = {
+    star: {
+      badge: 'star',
+      badgeText: 'Star schema — 1 fact table, 4 dimension tables',
+      tables: [
+        {
+          name: 'fact_sales', type: 'fact',
+          fields: [
+            { key:'pk', name:'sale_id', type:'BIGINT' },
+            { key:'fk', name:'date_id', type:'INT' },
+            { key:'fk', name:'product_id', type:'INT' },
+            { key:'fk', name:'customer_id', type:'INT' },
+            { key:'fk', name:'region_id', type:'INT' },
+            { key:'none', name:'quantity', type:'INT' },
+            { key:'none', name:'revenue', type:'DECIMAL(12,2)' },
+            { key:'none', name:'discount', type:'DECIMAL(5,2)' },
+          ],
+          sql: `<span class="cm">-- Fact table: central sales transactions</span>\n<span class="kw">CREATE TABLE</span> <span class="tb">fact_sales</span> (\n  <span class="col">sale_id</span>     BIGINT        <span class="kw">PRIMARY KEY</span>,\n  <span class="col">date_id</span>     INT           <span class="kw">REFERENCES</span> <span class="tb">dim_date</span>(<span class="col">date_id</span>),\n  <span class="col">product_id</span>  INT           <span class="kw">REFERENCES</span> <span class="tb">dim_product</span>(<span class="col">product_id</span>),\n  <span class="col">customer_id</span> INT           <span class="kw">REFERENCES</span> <span class="tb">dim_customer</span>(<span class="col">customer_id</span>),\n  <span class="col">region_id</span>   INT           <span class="kw">REFERENCES</span> <span class="tb">dim_region</span>(<span class="col">region_id</span>),\n  <span class="col">quantity</span>    INT           <span class="kw">NOT NULL</span>,\n  <span class="col">revenue</span>     DECIMAL(12,2) <span class="kw">NOT NULL</span>,\n  <span class="col">discount</span>    DECIMAL(5,2)  <span class="kw">DEFAULT</span> <span class="str">0.00</span>\n);`
+        },
+        {
+          name: 'dim_date', type: 'dim',
+          fields: [
+            { key:'pk', name:'date_id', type:'INT' },
+            { key:'none', name:'full_date', type:'DATE' },
+            { key:'none', name:'year', type:'INT' },
+            { key:'none', name:'quarter', type:'INT' },
+            { key:'none', name:'month', type:'INT' },
+            { key:'none', name:'week', type:'INT' },
+          ],
+          sql: `<span class="cm">-- Dimension: date / time</span>\n<span class="kw">CREATE TABLE</span> <span class="tb">dim_date</span> (\n  <span class="col">date_id</span>   INT  <span class="kw">PRIMARY KEY</span>,\n  <span class="col">full_date</span> DATE <span class="kw">NOT NULL</span>,\n  <span class="col">year</span>      INT  <span class="kw">NOT NULL</span>,\n  <span class="col">quarter</span>   INT  <span class="kw">CHECK</span> (quarter <span class="kw">BETWEEN</span> <span class="str">1</span> <span class="kw">AND</span> <span class="str">4</span>),\n  <span class="col">month</span>     INT  <span class="kw">CHECK</span> (month <span class="kw">BETWEEN</span> <span class="str">1</span> <span class="kw">AND</span> <span class="str">12</span>),\n  <span class="col">week</span>      INT\n);`
+        },
+        {
+          name: 'dim_product', type: 'dim',
+          fields: [
+            { key:'pk', name:'product_id', type:'INT' },
+            { key:'none', name:'product_name', type:'VARCHAR(200)' },
+            { key:'none', name:'category', type:'VARCHAR(100)' },
+            { key:'none', name:'brand', type:'VARCHAR(100)' },
+            { key:'none', name:'unit_price', type:'DECIMAL(10,2)' },
+          ],
+          sql: `<span class="cm">-- Dimension: product catalog</span>\n<span class="kw">CREATE TABLE</span> <span class="tb">dim_product</span> (\n  <span class="col">product_id</span>   INT           <span class="kw">PRIMARY KEY</span>,\n  <span class="col">product_name</span> VARCHAR(200)  <span class="kw">NOT NULL</span>,\n  <span class="col">category</span>     VARCHAR(100),\n  <span class="col">brand</span>        VARCHAR(100),\n  <span class="col">unit_price</span>   DECIMAL(10,2)\n);`
+        },
+        {
+          name: 'dim_customer', type: 'dim',
+          fields: [
+            { key:'pk', name:'customer_id', type:'INT' },
+            { key:'none', name:'full_name', type:'VARCHAR(200)' },
+            { key:'none', name:'email', type:'VARCHAR(200)' },
+            { key:'none', name:'segment', type:'VARCHAR(50)' },
+            { key:'none', name:'joined_date', type:'DATE' },
+          ],
+          sql: `<span class="cm">-- Dimension: customer info</span>\n<span class="kw">CREATE TABLE</span> <span class="tb">dim_customer</span> (\n  <span class="col">customer_id</span>  INT          <span class="kw">PRIMARY KEY</span>,\n  <span class="col">full_name</span>    VARCHAR(200) <span class="kw">NOT NULL</span>,\n  <span class="col">email</span>        VARCHAR(200) <span class="kw">UNIQUE</span>,\n  <span class="col">segment</span>      VARCHAR(50),\n  <span class="col">joined_date</span>  DATE\n);`
+        },
+        {
+          name: 'dim_region', type: 'dim',
+          fields: [
+            { key:'pk', name:'region_id', type:'INT' },
+            { key:'none', name:'city', type:'VARCHAR(100)' },
+            { key:'none', name:'province', type:'VARCHAR(100)' },
+            { key:'none', name:'country', type:'VARCHAR(100)' },
+            { key:'none', name:'timezone', type:'VARCHAR(50)' },
+          ],
+          sql: `<span class="cm">-- Dimension: geographic region</span>\n<span class="kw">CREATE TABLE</span> <span class="tb">dim_region</span> (\n  <span class="col">region_id</span>  INT          <span class="kw">PRIMARY KEY</span>,\n  <span class="col">city</span>       VARCHAR(100),\n  <span class="col">province</span>   VARCHAR(100),\n  <span class="col">country</span>    VARCHAR(100) <span class="kw">NOT NULL</span>,\n  <span class="col">timezone</span>   VARCHAR(50)\n);`
+        },
+      ]
+    },
+    snowflake: {
+      badge: 'snow',
+      badgeText: 'Snowflake schema — normalized dimension sub-tables',
+      tables: [
+        {
+          name: 'fact_sales', type: 'fact',
+          fields: [
+            { key:'pk', name:'sale_id', type:'BIGINT' },
+            { key:'fk', name:'date_id', type:'INT' },
+            { key:'fk', name:'product_id', type:'INT' },
+            { key:'fk', name:'customer_id', type:'INT' },
+            { key:'none', name:'quantity', type:'INT' },
+            { key:'none', name:'revenue', type:'DECIMAL(12,2)' },
+          ],
+          sql: `<span class="cm">-- Fact table (same as star schema)</span>\n<span class="kw">CREATE TABLE</span> <span class="tb">fact_sales</span> (\n  <span class="col">sale_id</span>     BIGINT        <span class="kw">PRIMARY KEY</span>,\n  <span class="col">date_id</span>     INT           <span class="kw">REFERENCES</span> <span class="tb">dim_date</span>(<span class="col">date_id</span>),\n  <span class="col">product_id</span>  INT           <span class="kw">REFERENCES</span> <span class="tb">dim_product</span>(<span class="col">product_id</span>),\n  <span class="col">customer_id</span> INT           <span class="kw">REFERENCES</span> <span class="tb">dim_customer</span>(<span class="col">customer_id</span>),\n  <span class="col">quantity</span>    INT           <span class="kw">NOT NULL</span>,\n  <span class="col">revenue</span>     DECIMAL(12,2) <span class="kw">NOT NULL</span>\n);`
+        },
+        {
+          name: 'dim_product', type: 'dim',
+          fields: [
+            { key:'pk', name:'product_id', type:'INT' },
+            { key:'fk', name:'category_id', type:'INT' },
+            { key:'none', name:'product_name', type:'VARCHAR(200)' },
+            { key:'none', name:'unit_price', type:'DECIMAL(10,2)' },
+          ],
+          sql: `<span class="cm">-- Normalized product dim (points to category)</span>\n<span class="kw">CREATE TABLE</span> <span class="tb">dim_product</span> (\n  <span class="col">product_id</span>   INT           <span class="kw">PRIMARY KEY</span>,\n  <span class="col">category_id</span>  INT           <span class="kw">REFERENCES</span> <span class="tb">dim_category</span>(<span class="col">category_id</span>),\n  <span class="col">product_name</span> VARCHAR(200)  <span class="kw">NOT NULL</span>,\n  <span class="col">unit_price</span>   DECIMAL(10,2)\n);`
+        },
+        {
+          name: 'dim_category', type: 'dim',
+          fields: [
+            { key:'pk', name:'category_id', type:'INT' },
+            { key:'none', name:'category_name', type:'VARCHAR(100)' },
+            { key:'none', name:'department', type:'VARCHAR(100)' },
+          ],
+          sql: `<span class="cm">-- Sub-dimension: product categories</span>\n<span class="kw">CREATE TABLE</span> <span class="tb">dim_category</span> (\n  <span class="col">category_id</span>   INT          <span class="kw">PRIMARY KEY</span>,\n  <span class="col">category_name</span> VARCHAR(100) <span class="kw">NOT NULL</span>,\n  <span class="col">department</span>    VARCHAR(100)\n);`
+        },
+        {
+          name: 'dim_customer', type: 'dim',
+          fields: [
+            { key:'pk', name:'customer_id', type:'INT' },
+            { key:'fk', name:'city_id', type:'INT' },
+            { key:'none', name:'full_name', type:'VARCHAR(200)' },
+            { key:'none', name:'segment', type:'VARCHAR(50)' },
+          ],
+          sql: `<span class="cm">-- Normalized customer dim (points to city)</span>\n<span class="kw">CREATE TABLE</span> <span class="tb">dim_customer</span> (\n  <span class="col">customer_id</span> INT          <span class="kw">PRIMARY KEY</span>,\n  <span class="col">city_id</span>     INT          <span class="kw">REFERENCES</span> <span class="tb">dim_city</span>(<span class="col">city_id</span>),\n  <span class="col">full_name</span>   VARCHAR(200) <span class="kw">NOT NULL</span>,\n  <span class="col">segment</span>     VARCHAR(50)\n);`
+        },
+        {
+          name: 'dim_city', type: 'dim',
+          fields: [
+            { key:'pk', name:'city_id', type:'INT' },
+            { key:'fk', name:'country_id', type:'INT' },
+            { key:'none', name:'city_name', type:'VARCHAR(100)' },
+            { key:'none', name:'timezone', type:'VARCHAR(50)' },
+          ],
+          sql: `<span class="cm">-- Sub-dimension: cities</span>\n<span class="kw">CREATE TABLE</span> <span class="tb">dim_city</span> (\n  <span class="col">city_id</span>    INT          <span class="kw">PRIMARY KEY</span>,\n  <span class="col">country_id</span> INT          <span class="kw">REFERENCES</span> <span class="tb">dim_country</span>(<span class="col">country_id</span>),\n  <span class="col">city_name</span>  VARCHAR(100) <span class="kw">NOT NULL</span>,\n  <span class="col">timezone</span>   VARCHAR(50)\n);`
+        },
+        {
+          name: 'dim_country', type: 'dim',
+          fields: [
+            { key:'pk', name:'country_id', type:'INT' },
+            { key:'none', name:'country_name', type:'VARCHAR(100)' },
+            { key:'none', name:'region', type:'VARCHAR(50)' },
+          ],
+          sql: `<span class="cm">-- Sub-dimension: countries</span>\n<span class="kw">CREATE TABLE</span> <span class="tb">dim_country</span> (\n  <span class="col">country_id</span>   INT          <span class="kw">PRIMARY KEY</span>,\n  <span class="col">country_name</span> VARCHAR(100) <span class="kw">NOT NULL</span>,\n  <span class="col">region</span>       VARCHAR(50)\n);`
+        },
+      ]
+    }
+  };
+
+  let currentSchema = 'star';
+  let selectedTable = 0;
+
+  function renderTables() {
+    const s = schemas[currentSchema];
+    const grid = document.getElementById('tablesGrid');
+    grid.innerHTML = s.tables.map((t, i) => `
+      <div class="table-card ${t.type} ${i===selectedTable?'selected':''}" onclick="selectTable(${i})">
+        <div class="table-header">
+          <div class="table-name">${t.name}</div>
+          <span class="table-type ${t.type}">${t.type === 'fact' ? 'Fact' : 'Dimension'}</span>
+        </div>
+        <div class="table-fields">
+          ${t.fields.slice(0,6).map(f => `
+            <div class="field-row">
+              <div class="field-key ${f.key}">${f.key==='pk'?'PK':f.key==='fk'?'FK':''}</div>
+              <div class="field-name">${f.name}</div>
+              <div class="field-type">${f.type}</div>
+            </div>
+          `).join('')}
+          ${t.fields.length > 6 ? `<div class="field-row"><div class="field-type" style="padding-left:22px">+${t.fields.length-6} more fields</div></div>` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function selectTable(i) {
+    selectedTable = i;
+    const t = schemas[currentSchema].tables[i];
+    document.getElementById('sqlTableName').textContent = t.name;
+    document.getElementById('sqlBody').innerHTML = t.sql;
+    renderTables();
+  }
+
+  function switchSchema(type, btn) {
+    currentSchema = type;
+    selectedTable = 0;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    const s = schemas[type];
+    const badge = document.getElementById('schemaBadge');
+    badge.className = 'schema-type-badge ' + s.badge;
+    badge.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polygon points="6,1 7.5,4.5 11,5 8.5,7.5 9,11 6,9.5 3,11 3.5,7.5 1,5 4.5,4.5" fill="${type==='star'?'#185FA5':'#085041'}"/></svg>${s.badgeText}`;
+    renderTables();
+    selectTable(0);
+  }
+
+  function copySQL() {
+    const t = schemas[currentSchema].tables[selectedTable];
+    const plain = t.sql.replace(/<[^>]+>/g, '');
+    navigator.clipboard.writeText(plain)
+      .then(() => alert('SQL copied to clipboard!'))
+      .catch(() => alert('Copy failed. Please select and copy manually.'));
+  }
+
+  renderTables();
+  selectTable(0);
+
+  window.onload = function() {
+    if (user.firstName) {
+      const initials = user.firstName[0] + (user.lastName ? user.lastName[0] : '');
+      document.getElementById('userAvatar').textContent = initials.toUpperCase();
+      document.getElementById('userName').textContent = user.firstName + ' ' + user.lastName;
+      document.getElementById('userRole').textContent = user.role || 'Viewer';
+    }
+  }
+
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = 'dwms-login.html';
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DWMS — Settings</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; }
+    .app { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar { width: 200px; background: #0C447C; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 20; }
+    .sidebar-brand { display: flex; align-items: center; gap: 8px; padding: 1.25rem 1rem; border-bottom: 0.5px solid rgba(255,255,255,0.1); }
+    .brand-icon { width: 28px; height: 28px; background: #378ADD; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+    .brand-icon svg { width: 16px; height: 16px; }
+    .brand-name { font-size: 13px; font-weight: 600; color: #fff; }
+    .sidebar-nav { flex: 1; padding: 0.75rem 0; overflow-y: auto; }
+    .nav-section { font-size: 10px; color: #85B7EB; padding: 0.75rem 1rem 0.25rem; letter-spacing: 0.8px; text-transform: uppercase; }
+    .nav-item { display: flex; align-items: center; gap: 8px; padding: 0.5rem 1rem; font-size: 13px; color: #B5D4F4; cursor: pointer; text-decoration: none; transition: background 0.15s; }
+    .nav-item:hover { background: rgba(255,255,255,0.07); }
+    .nav-item.active { background: rgba(255,255,255,0.12); color: #fff; border-right: 2px solid #378ADD; }
+    .nav-item svg { width: 15px; height: 15px; opacity: 0.8; flex-shrink: 0; }
+    .sidebar-footer { padding: 1rem; border-top: 0.5px solid rgba(255,255,255,0.1); }
+    .avatar-row { display: flex; align-items: center; gap: 8px; }
+    .avatar { width: 28px; height: 28px; border-radius: 50%; background: #378ADD; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #fff; flex-shrink: 0; }
+    .avatar-name { font-size: 12px; color: #fff; font-weight: 600; }
+    .avatar-role { font-size: 10px; color: #85B7EB; }
+
+    /* ── Main ── */
+    .main { flex: 1; margin-left: 200px; display: flex; flex-direction: column; min-height: 100vh; }
+    .topbar { background: #fff; border-bottom: 0.5px solid #e0e0de; padding: 0.75rem 1.5rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+    .topbar-title { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+    .topbar-sub { font-size: 12px; color: #888; margin-top: 1px; }
+    .topbar-right { display: flex; gap: 8px; align-items: center; }
+
+    /* ── Buttons ── */
+    .btn-primary { font-size: 12px; padding: 6px 14px; border-radius: 8px; border: none; background: #185FA5; color: #fff; cursor: pointer; font-family: inherit; font-weight: 600; transition: background 0.15s; }
+    .btn-primary:hover { background: #0C447C; }
+    .btn-sm { font-size: 11px; padding: 5px 12px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; color: #1a1a1a; cursor: pointer; font-family: inherit; transition: background 0.15s; }
+    .btn-sm:hover { background: #f5f5f3; }
+    .btn-danger { font-size: 12px; padding: 6px 14px; border-radius: 8px; border: none; background: #A32D2D; color: #fff; cursor: pointer; font-family: inherit; font-weight: 600; transition: background 0.15s; }
+    .btn-danger:hover { background: #791F1F; }
+    .btn-warning { font-size: 12px; padding: 6px 14px; border-radius: 8px; border: none; background: #BA7517; color: #fff; cursor: pointer; font-family: inherit; font-weight: 600; transition: background 0.15s; }
+    .btn-warning:hover { background: #8a5510; }
+
+    /* ── Layout ── */
+    .settings-layout { display: flex; flex: 1; min-height: 0; }
+    .settings-nav { width: 200px; background: #fff; border-right: 0.5px solid #e0e0de; flex-shrink: 0; padding: 1rem 0; position: sticky; top: 53px; height: calc(100vh - 53px); overflow-y: auto; }
+    .settings-nav-item { display: flex; align-items: center; gap: 8px; padding: 0.5rem 1rem; font-size: 12px; color: #555; cursor: pointer; border-left: 2px solid transparent; transition: all 0.15s; }
+    .settings-nav-item:hover { background: #f5f5f3; color: #1a1a1a; }
+    .settings-nav-item.active { background: #E6F1FB; color: #185FA5; border-left-color: #185FA5; font-weight: 600; }
+    .settings-nav-item svg { width: 14px; height: 14px; flex-shrink: 0; }
+    .settings-nav-group { font-size: 10px; color: #aaa; padding: 0.75rem 1rem 0.25rem; letter-spacing: 0.8px; text-transform: uppercase; }
+    .settings-content { flex: 1; padding: 1.5rem; overflow-y: auto; max-width: 780px; }
+
+    /* ── Section Cards ── */
+    .settings-section { display: none; }
+    .settings-section.active { display: block; }
+    .section-title { font-size: 16px; font-weight: 600; color: #1a1a1a; margin-bottom: 0.25rem; }
+    .section-desc { font-size: 12px; color: #888; margin-bottom: 1.5rem; }
+    .card { background: #fff; border: 0.5px solid #e0e0de; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+    .card-title { font-size: 13px; font-weight: 600; color: #1a1a1a; margin-bottom: 0.25rem; }
+    .card-desc { font-size: 11px; color: #888; margin-bottom: 1rem; }
+    .card-divider { border: none; border-top: 0.5px solid #e0e0de; margin: 1rem 0; }
+
+    /* ── Form Fields ── */
+    .field { margin-bottom: 0.9rem; }
+    .field:last-child { margin-bottom: 0; }
+    .field label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 5px; }
+    .field input, .field select, .field textarea {
+      width: 100%; border-radius: 8px; border: 0.5px solid #ccc;
+      background: #fff; padding: 0 10px; font-size: 13px; color: #1a1a1a;
+      font-family: inherit; outline: none; height: 36px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .field textarea { height: 80px; padding: 8px 10px; resize: none; }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,0.12);
+    }
+    .field input:disabled { background: #f5f5f3; color: #888; cursor: not-allowed; }
+    .field-hint { font-size: 11px; color: #aaa; margin-top: 4px; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+    /* ── Toggle Switch ── */
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 0.5px solid #e0e0de; }
+    .toggle-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .toggle-row:first-child { padding-top: 0; }
+    .toggle-info { flex: 1; }
+    .toggle-label { font-size: 13px; color: #1a1a1a; font-weight: 500; }
+    .toggle-desc { font-size: 11px; color: #888; margin-top: 2px; }
+    .toggle { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider { position: absolute; cursor: pointer; inset: 0; background: #ccc; border-radius: 20px; transition: background 0.2s; }
+    .toggle-slider:before { content: ''; position: absolute; width: 14px; height: 14px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: transform 0.2s; }
+    .toggle input:checked + .toggle-slider { background: #185FA5; }
+    .toggle input:checked + .toggle-slider:before { transform: translateX(16px); }
+
+    /* ── Profile Avatar ── */
+    .avatar-section { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem; }
+    .profile-avatar { width: 64px; height: 64px; border-radius: 50%; background: #185FA5; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 600; color: #fff; flex-shrink: 0; }
+    .avatar-name-big { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+    .avatar-email-small { font-size: 12px; color: #888; }
+
+    /* ── Storage Bar ── */
+    .storage-bar-wrap { height: 8px; background: #e0e0de; border-radius: 4px; margin: 0.75rem 0; overflow: hidden; }
+    .storage-bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #185FA5, #378ADD); transition: width 0.5s; }
+    .storage-labels { display: flex; justify-content: space-between; font-size: 11px; color: #888; }
+
+    /* ── API Keys Table ── */
+    .api-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .api-table th { text-align: left; font-weight: 600; font-size: 11px; color: #888; padding: 6px 10px; border-bottom: 0.5px solid #e0e0de; }
+    .api-table td { padding: 8px 10px; border-bottom: 0.5px solid #e0e0de; color: #1a1a1a; }
+    .api-table tr:last-child td { border-bottom: none; }
+    .api-table tr:hover td { background: #fafaf8; }
+    .key-mask { font-family: 'Courier New', monospace; color: #888; }
+
+    /* ── Audit Log ── */
+    .audit-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 0.5px solid #e0e0de; }
+    .audit-item:last-child { border-bottom: none; }
+    .audit-dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+    .audit-text { font-size: 12px; color: #1a1a1a; line-height: 1.4; }
+    .audit-meta { font-size: 11px; color: #888; margin-top: 2px; }
+
+    /* ── Notification Channels ── */
+    .channel-card { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 0.5px solid #e0e0de; }
+    .channel-card:last-child { border-bottom: none; }
+    .channel-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+    .channel-info { flex: 1; }
+    .channel-name { font-size: 13px; font-weight: 500; color: #1a1a1a; }
+    .channel-status { font-size: 11px; color: #888; margin-top: 1px; }
+    .status-dot-sm { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; }
+
+    /* ── Danger Zone ── */
+    .danger-card { background: #fff; border: 0.5px solid #f09595; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+    .danger-card-title { font-size: 13px; font-weight: 600; color: #A32D2D; margin-bottom: 0.25rem; }
+    .danger-card-desc { font-size: 12px; color: #888; margin-bottom: 1rem; }
+    .danger-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+
+    /* ── Badge ── */
+    .badge { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+    .badge.green  { background: #EAF3DE; color: #27500A; }
+    .badge.blue   { background: #E6F1FB; color: #0C447C; }
+    .badge.yellow { background: #FAEEDA; color: #633806; }
+    .badge.red    { background: #FCEBEB; color: #791F1F; }
+    .badge.gray   { background: #F1EFE8; color: #5F5E5A; }
+
+    /* ── Color Picker Row ── */
+    .color-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .color-swatch { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: border-color 0.15s; }
+    .color-swatch.selected { border-color: #1a1a1a; }
+
+    /* ── Plan Card ── */
+    .plan-card { background: linear-gradient(135deg, #0C447C, #185FA5); border-radius: 12px; padding: 1.25rem; color: #fff; margin-bottom: 1rem; }
+    .plan-name { font-size: 18px; font-weight: 600; margin-bottom: 0.25rem; }
+    .plan-desc { font-size: 12px; color: #B5D4F4; margin-bottom: 1rem; }
+    .plan-features { display: flex; flex-direction: column; gap: 6px; }
+    .plan-feature { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #B5D4F4; }
+    .plan-feature svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+    /* ── Billing detail rows ── */
+    .billing-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 0.5px solid #e0e0de; font-size: 12px; }
+    .billing-row:last-child { border-bottom: none; }
+    .billing-label { color: #888; }
+    .billing-value { color: #1a1a1a; font-weight: 500; }
+
+    /* ── Toast ── */
+    .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #1a1a1a; color: #fff; font-size: 12px; padding: 10px 16px; border-radius: 10px; z-index: 999; display: none; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    .toast.show { display: flex; }
+
+    /* ── Modal ── */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: #fff; border-radius: 14px; padding: 1.5rem; width: 400px; max-width: 95vw; }
+    .modal-title { font-size: 15px; font-weight: 600; color: #1a1a1a; margin-bottom: 0.25rem; }
+    .modal-sub { font-size: 12px; color: #888; margin-bottom: 1.25rem; }
+    .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1.25rem; }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .sidebar { width: 60px; }
+      .brand-name, .nav-section, .avatar-role, .avatar-name { display: none; }
+      .main { margin-left: 60px; }
+      .row2, .row3 { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .settings-nav { display: none; }
+      .settings-content { padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ── Sidebar ── -->
+  <div class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 16 16" fill="none">
+          <rect x="1" y="1" width="6" height="6" rx="1" fill="white" opacity="0.9"/>
+          <rect x="9" y="1" width="6" height="6" rx="1" fill="white" opacity="0.6"/>
+          <rect x="1" y="9" width="6" height="6" rx="1" fill="white" opacity="0.6"/>
+          <rect x="9" y="9" width="6" height="6" rx="1" fill="white" opacity="0.35"/>
+        </svg>
+      </div>
+      <span class="brand-name">DWMS</span>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-section">Main</div>
+      <a href="dwms-dashboard.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" fill="currentColor"/><rect x="9" y="1" width="6" height="6" rx="1" fill="currentColor" opacity="0.5"/><rect x="1" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.5"/><rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.3"/></svg>
+        Dashboard
+      </a>
+      <a href="dwms-data-resource.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Data sources
+      </a>
+      <a href="dwms-etl-pipelines.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M8 2v4l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/></svg>
+        ETL pipelines
+      </a>
+      <a href="dwms-schema-manager.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="12" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
+        Schema manager
+      </a>
+      <a href="dwms-query-editor.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M5 7h6M5 10h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Query editor
+      </a>
+      <div class="nav-section">Admin</div>
+      <a href="dwms-user-management.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M2 14c0-3 2.7-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Users
+      </a>
+      <a href="#" class="nav-item active">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 2v1.5M8 12.5V14M2 8h1.5M12.5 8H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Settings
+      </a>
+    </div>
+    <div class="sidebar-footer">
+      <div class="avatar-row">
+        <div class="avatar" id="userAvatar">AD</div>
+        <div>
+          <div class="avatar-name" id="userName">Admin</div>
+          <div class="avatar-role" id="userRole">Administrator</div>
+        </div>
+      </div>
+      <div style="margin-top:8px;">
+        <button onclick="logout()" style="width:100%;font-size:11px;padding:5px;border-radius:6px;border:0.5px solid rgba(255,255,255,0.2);background:transparent;color:#B5D4F4;cursor:pointer;">
+          Sign out
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Main ── -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">Settings</div>
+        <div class="topbar-sub">Manage your system preferences and configuration</div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-sm" onclick="resetChanges()">Reset</button>
+        <button class="btn-primary" onclick="saveAll()">Save changes</button>
+      </div>
+    </div>
+
+    <div class="settings-layout">
+
+      <!-- ── Settings Nav ── -->
+      <div class="settings-nav">
+        <div class="settings-nav-group">Account</div>
+        <div class="settings-nav-item active" onclick="switchSection('profile', this)">
+          <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M2 14c0-3 2.7-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Profile
+        </div>
+        <div class="settings-nav-item" onclick="switchSection('security', this)">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M8 2L3 4.5v4C3 11.5 5.5 14 8 14s5-2.5 5-5.5v-4L8 2z" stroke="currentColor" stroke-width="1.5"/></svg>
+          Security
+        </div>
+        <div class="settings-nav-item" onclick="switchSection('notifications', this)">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M13 11H3l2-5V5a3 3 0 0 1 6 0v1l2 5z" stroke="currentColor" stroke-width="1.5"/><path d="M6 11v1a2 2 0 0 0 4 0v-1" stroke="currentColor" stroke-width="1.5"/></svg>
+          Notifications
+        </div>
+        <div class="settings-nav-group">System</div>
+        <div class="settings-nav-item" onclick="switchSection('general', this)">
+          <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 2v1.5M8 12.5V14M2 8h1.5M12.5 8H14M3.5 3.5l1.1 1.1M11.4 11.4l1.1 1.1M3.5 12.5l1.1-1.1M11.4 4.6l1.1-1.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          General
+        </div>
+        <div class="settings-nav-item" onclick="switchSection('appearance', this)">
+          <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M8 3v5l3 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Appearance
+        </div>
+        <div class="settings-nav-item" onclick="switchSection('storage', this)">
+          <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="4" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="12" height="4" rx="1" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="5" r="0.75" fill="currentColor"/><circle cx="12" cy="11" r="0.75" fill="currentColor"/></svg>
+          Storage
+        </div>
+        <div class="settings-nav-item" onclick="switchSection('api', this)">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M5 6l-3 2 3 2M11 6l3 2-3 2M9 4l-2 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          API keys
+        </div>
+        <div class="settings-nav-item" onclick="switchSection('audit', this)">
+          <svg viewBox="0 0 16 16" fill="none"><rect x="3" y="2" width="10" height="12" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M6 6h4M6 9h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Audit log
+        </div>
+        <div class="settings-nav-group">Billing</div>
+        <div class="settings-nav-item" onclick="switchSection('billing', this)">
+          <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="4" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M2 7h12" stroke="currentColor" stroke-width="1.5"/></svg>
+          Plan & billing
+        </div>
+        <div class="settings-nav-group">Danger</div>
+        <div class="settings-nav-item" onclick="switchSection('danger', this)" style="color:#A32D2D;">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M8 2l6 12H2L8 2z" stroke="#A32D2D" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 7v3M8 11.5v.5" stroke="#A32D2D" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Danger zone
+        </div>
+      </div>
+
+      <!-- ── Settings Content ── -->
+      <div class="settings-content">
+
+        <!-- ══ PROFILE ══ -->
+        <div class="settings-section active" id="section-profile">
+          <div class="section-title">Profile</div>
+          <div class="section-desc">Manage your personal information and account details</div>
+
+          <div class="card">
+            <div class="card-title">Personal information</div>
+            <div class="card-desc">Update your name, email and profile details</div>
+            <div class="avatar-section">
+              <div class="profile-avatar" id="profileAvatar">AD</div>
+              <div>
+                <div class="avatar-name-big" id="profileDisplayName">Ahmad Doe</div>
+                <div class="avatar-email-small">admin@company.com</div>
+                <div style="display:flex;gap:6px;margin-top:8px;">
+                  <button class="btn-sm" onclick="showToast('Photo upload coming soon')">Upload photo</button>
+                  <button class="btn-sm" style="color:#A32D2D;" onclick="showToast('Photo removed')">Remove</button>
+                </div>
+              </div>
+            </div>
+            <hr class="card-divider">
+            <div class="row2">
+              <div class="field">
+                <label>First name</label>
+                <input type="text" id="pfFirstName" value="Ahmad" oninput="updateAvatar()" />
+              </div>
+              <div class="field">
+                <label>Last name</label>
+                <input type="text" id="pfLastName" value="Doe" oninput="updateAvatar()" />
+              </div>
+            </div>
+            <div class="field">
+              <label>Work email</label>
+              <input type="email" id="pfEmail" value="admin@company.com" />
+            </div>
+            <div class="row2">
+              <div class="field">
+                <label>Job title</label>
+                <input type="text" id="pfTitle" value="System Administrator" />
+              </div>
+              <div class="field">
+                <label>Department</label>
+                <input type="text" id="pfDept" value="IT Operations" />
+              </div>
+            </div>
+            <div class="field">
+              <label>Organization</label>
+              <input type="text" id="pfOrg" value="PT Nusantara" />
+            </div>
+            <div class="field">
+              <label>Bio</label>
+              <textarea id="pfBio">Managing DWMS platform and data infrastructure for PT Nusantara.</textarea>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Regional settings</div>
+            <div class="card-desc">Configure your timezone and language preferences</div>
+            <div class="row2">
+              <div class="field">
+                <label>Language</label>
+                <select id="pfLang">
+                  <option selected>English (US)</option>
+                  <option>Bahasa Indonesia</option>
+                  <option>English (UK)</option>
+                  <option>日本語</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Timezone</label>
+                <select id="pfTimezone">
+                  <option>UTC+7 — Asia/Jakarta</option>
+                  <option>UTC+8 — Asia/Singapore</option>
+                  <option>UTC+0 — UTC</option>
+                  <option>UTC-5 — America/New_York</option>
+                  <option>UTC+1 — Europe/London</option>
+                </select>
+              </div>
+            </div>
+            <div class="row2">
+              <div class="field">
+                                <label>Date format</label>
+                <select>
+                  <option>DD/MM/YYYY</option>
+                  <option>MM/DD/YYYY</option>
+                  <option>YYYY-MM-DD</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Number format</label>
+                <select>
+                  <option>1,000,000.00</option>
+                  <option>1.000.000,00</option>
+                  <option>1 000 000.00</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ SECURITY ══ -->
+        <div class="settings-section" id="section-security">
+          <div class="section-title">Security</div>
+          <div class="section-desc">Manage your password, 2FA and active sessions</div>
+
+          <div class="card">
+            <div class="card-title">Change password</div>
+            <div class="card-desc">Use a strong password of at least 8 characters</div>
+            <div class="field">
+              <label>Current password</label>
+              <input type="password" id="secCurrent" placeholder="••••••••" />
+            </div>
+            <div class="row2">
+              <div class="field">
+                <label>New password</label>
+                <input type="password" id="secNew" placeholder="••••••••"
+                  oninput="checkPwStrength(this.value)" />
+              </div>
+              <div class="field">
+                <label>Confirm new password</label>
+                <input type="password" id="secConfirm" placeholder="••••••••" />
+              </div>
+            </div>
+            <div style="height:4px;background:#e0e0de;border-radius:2px;overflow:hidden;margin-bottom:4px;">
+              <div id="pwStrengthBar" style="height:100%;border-radius:2px;width:0%;transition:all 0.3s;"></div>
+            </div>
+            <div id="pwStrengthLabel" style="font-size:11px;color:#aaa;margin-bottom:1rem;">Password strength</div>
+            <button class="btn-primary" onclick="changePassword()">Update password</button>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Two-factor authentication</div>
+            <div class="card-desc">Add an extra layer of security to your account</div>
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">Authenticator app (TOTP)</div>
+                <div class="toggle-desc">Use Google Authenticator or Authy</div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" checked onchange="showToast('2FA authenticator updated')">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">SMS verification</div>
+                <div class="toggle-desc">Receive a code via text message</div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" onchange="showToast('SMS 2FA updated')">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">Login notifications</div>
+                <div class="toggle-desc">Email alert on new sign-in from unknown device</div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" checked onchange="showToast('Login notification setting updated')">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Active sessions</div>
+            <div class="card-desc">Devices currently signed into your account</div>
+            <div id="sessionList"></div>
+            <div style="margin-top:1rem;">
+              <button class="btn-warning" onclick="revokeAllSessions()">Revoke all other sessions</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ NOTIFICATIONS ══ -->
+        <div class="settings-section" id="section-notifications">
+          <div class="section-title">Notifications</div>
+          <div class="section-desc">Control how and when you receive alerts</div>
+
+          <div class="card">
+            <div class="card-title">Email notifications</div>
+            <div class="card-desc">Choose which events trigger email alerts</div>
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">Pipeline failures</div>
+                <div class="toggle-desc">Alert when an ETL pipeline fails</div>
+              </div>
+              <label class="toggle"><input type="checkbox" checked onchange="showToast('Notification preference saved')"><span class="toggle-slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">Pipeline completed</div>
+                <div class="toggle-desc">Alert when a pipeline finishes successfully</div>
+              </div>
+              <label class="toggle"><input type="checkbox" onchange="showToast('Notification preference saved')"><span class="toggle-slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">Storage quota warnings</div>
+                <div class="toggle-desc">Alert at 80% and 95% storage usage</div>
+              </div>
+              <label class="toggle"><input type="checkbox" checked onchange="showToast('Notification preference saved')"><span class="toggle-slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">New user registrations</div>
+                <div class="toggle-desc">Alert when a new user joins</div>
+              </div>
+              <label class="toggle"><input type="checkbox" checked onchange="showToast('Notification preference saved')"><span class="toggle-slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">Weekly summary report</div>
+                <div class="toggle-desc">Receive a weekly digest every Monday</div>
+              </div>
+              <label class="toggle"><input type="checkbox" checked onchange="showToast('Notification preference saved')"><span class="toggle-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Notification channels</div>
+            <div class="card-desc">Configure where notifications are delivered</div>
+            <div class="channel-card">
+              <div class="channel-icon" style="background:#E6F1FB;">📧</div>
+              <div class="channel-info">
+                <div class="channel-name">Email</div>
+                <div class="channel-status">
+                  <span class="status-dot-sm" style="background:#3B6D11;"></span>
+                  admin@company.com — Active
+                </div>
+              </div>
+              <button class="btn-sm" onclick="showToast('Email channel configured')">Configure</button>
+            </div>
+            <div class="channel-card">
+              <div class="channel-icon" style="background:#E1F5EE;">💬</div>
+              <div class="channel-info">
+                <div class="channel-name">Slack</div>
+                <div class="channel-status">
+                  <span class="status-dot-sm" style="background:#3B6D11;"></span>
+                  #dwms-alerts — Connected
+                </div>
+              </div>
+              <button class="btn-sm" onclick="showToast('Slack webhook configured')">Configure</button>
+            </div>
+            <div class="channel-card">
+              <div class="channel-icon" style="background:#FAEEDA;">📱</div>
+              <div class="channel-info">
+                <div class="channel-name">SMS</div>
+                <div class="channel-status">
+                  <span class="status-dot-sm" style="background:#ccc;"></span>
+                  Not configured
+                </div>
+              </div>
+              <button class="btn-sm" onclick="showToast('SMS notifications require phone number setup')">Set up</button>
+            </div>
+            <div class="channel-card">
+              <div class="channel-icon" style="background:#F0EAF8;">🔔</div>
+              <div class="channel-info">
+                <div class="channel-name">Webhook</div>
+                <div class="channel-status">
+                  <span class="status-dot-sm" style="background:#ccc;"></span>
+                  No webhook URL set
+                </div>
+              </div>
+              <button class="btn-sm" onclick="showToast('Add your webhook endpoint URL')">Set up</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ GENERAL ══ -->
+        <div class="settings-section" id="section-general">
+          <div class="section-title">General</div>
+          <div class="section-desc">System-wide configuration and platform settings</div>
+
+          <div class="card">
+            <div class="card-title">Platform information</div>
+            <div class="card-desc">Basic details about your DWMS installation</div>
+            <div class="row2">
+              <div class="field">
+                <label>Platform name</label>
+                <input type="text" value="DWMS — PT Nusantara" />
+              </div>
+              <div class="field">
+                <label>Version</label>
+                <input type="text" value="v2.4.1" disabled />
+                <div class="field-hint">Latest version. Auto-updates enabled.</div>
+              </div>
+            </div>
+            <div class="row2">
+              <div class="field">
+                <label>Default database</label>
+                <select>
+                  <option>warehouse_prod</option>
+                  <option>warehouse_dev</option>
+                  <option>analytics_db</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Query timeout (seconds)</label>
+                <input type="number" value="30" min="5" max="300" />
+              </div>
+            </div>
+            <div class="field">
+              <label>Max rows per query result</label>
+              <select>
+                <option>1,000</option>
+                <option selected>5,000</option>
+                <option>10,000</option>
+                <option>50,000</option>
+                <option>Unlimited</option>
+              </select>
+              <div class="field-hint">Limiting rows improves performance for large datasets.</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">System behaviour</div>
+            <div class="card-desc">Control global platform features</div>
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">Maintenance mode</div>
+                <div class="toggle-desc">Restrict access to admins only during maintenance</div>
+              </div>
+              <label class="toggle"><input type="checkbox" onchange="showToast('Maintenance mode toggled')"><span class="toggle-slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">Auto-run pipelines on schedule</div>
+                <div class="toggle-desc">Allow pipelines to execute on their set schedule</div>
+              </div>
+              <label class="toggle"><input type="checkbox" checked onchange="showToast('Auto-run setting updated')"><span class="toggle-slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">Query result caching</div>
+                <div class="toggle-desc">Cache frequent queries for faster response</div>
+              </div>
+              <label class="toggle"><input type="checkbox" checked onchange="showToast('Query caching updated')"><span class="toggle-slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">Public API access</div>
+                <div class="toggle-desc">Allow external API access with valid API keys</div>
+              </div>
+              <label class="toggle"><input type="checkbox" checked onchange="showToast('Public API access updated')"><span class="toggle-slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">Detailed error messages</div>
+                <div class="toggle-desc">Show stack traces and full error details</div>
+              </div>
+              <label class="toggle"><input type="checkbox" onchange="showToast('Error detail setting updated')"><span class="toggle-slider"></span></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ APPEARANCE ══ -->
+        <div class="settings-section" id="section-appearance">
+          <div class="section-title">Appearance</div>
+          <div class="section-desc">Customize the look and feel of your dashboard</div>
+
+          <div class="card">
+            <div class="card-title">Theme</div>
+            <div class="card-desc">Choose your preferred interface theme</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <div onclick="selectTheme(this,'light')" style="border:2px solid #185FA5;border-radius:10px;padding:12px 20px;cursor:pointer;text-align:center;min-width:100px;">
+                <div style="font-size:22px;margin-bottom:4px;">☀️</div>
+                <div style="font-size:12px;font-weight:600;color:#185FA5;">Light</div>
+              </div>
+              <div onclick="selectTheme(this,'dark')" style="border:1.5px solid #ccc;border-radius:10px;padding:12px 20px;cursor:pointer;text-align:center;min-width:100px;">
+                <div style="font-size:22px;margin-bottom:4px;">🌙</div>
+                <div style="font-size:12px;font-weight:600;color:#555;">Dark</div>
+              </div>
+              <div onclick="selectTheme(this,'auto')" style="border:1.5px solid #ccc;border-radius:10px;padding:12px 20px;cursor:pointer;text-align:center;min-width:100px;">
+                <div style="font-size:22px;margin-bottom:4px;">🖥️</div>
+                <div style="font-size:12px;font-weight:600;color:#555;">System</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Accent color</div>
+            <div class="card-desc">Choose the primary highlight color</div>
+            <div class="color-row" id="colorRow">
+              <div class="color-swatch selected" style="background:#185FA5;" onclick="selectColor(this,'#185FA5')" title="Blue"></div>
+              <div class="color-swatch" style="background:#1D9E75;" onclick="selectColor(this,'#1D9E75')" title="Green"></div>
+              <div class="color-swatch" style="background:#6B3FA0;" onclick="selectColor(this,'#6B3FA0')" title="Purple"></div>
+              <div class="color-swatch" style="background:#BA7517;" onclick="selectColor(this,'#BA7517')" title="Amber"></div>
+              <div class="color-swatch" style="background:#A32D2D;" onclick="selectColor(this,'#A32D2D')" title="Red"></div>
+              <div class="color-swatch" style="background:#1a1a1a;" onclick="selectColor(this,'#1a1a1a')" title="Dark"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Display density</div>
+            <div class="card-desc">Adjust the spacing and size of interface elements</div>
+            <div style="display:flex;gap:8px;" id="densityBtns">
+              <button class="btn-sm" onclick="selectDensity(this)">Compact</button>
+              <button class="btn-primary" style="font-size:11px;" onclick="selectDensity(this)">Default</button>
+              <button class="btn-sm" onclick="selectDensity(this)">Comfortable</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Sidebar</div>
+            <div class="card-desc">Control sidebar display preferences</div>
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">Collapsed by default</div>
+                <div class="toggle-desc">Show icon-only sidebar on page load</div>
+              </div>
+              <label class="toggle"><input type="checkbox" onchange="showToast('Sidebar preference saved')"><span class="toggle-slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">Show section labels</div>
+                <div class="toggle-desc">Display group headings in the sidebar</div>
+              </div>
+              <label class="toggle"><input type="checkbox" checked onchange="showToast('Sidebar preference saved')"><span class="toggle-slider"></span></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ STORAGE ══ -->
+        <div class="settings-section" id="section-storage">
+          <div class="section-title">Storage</div>
+          <div class="section-desc">Monitor and manage your data warehouse storage</div>
+
+          <div class="card">
+            <div class="card-title">Storage usage</div>
+            <div class="card-desc">Current usage across all data sources</div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.5rem;">
+              <span style="font-size:24px;font-weight:600;color:#1a1a1a;">4.2 TB</span>
+              <span class="badge yellow">84% used</span>
+            </div>
+            <div class="storage-bar-wrap">
+              <div class="storage-bar-fill" style="width:84%;"></div>
+            </div>
+            <div class="storage-labels">
+              <span>0 TB</span>
+              <span style="color:#BA7517;font-weight:600;">4.2 TB used</span>
+              <span>5 TB limit</span>
+            </div>
+            <hr class="card-divider">
+            <div id="storageBreakdown"></div>
+            <div style="margin-top:1rem;">
+              <button class="btn-primary" onclick="showToast('Upgrade plan to expand storage')">Upgrade storage</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Data retention</div>
+            <div class="card-desc">Configure how long data is kept before archiving</div>
+            <div class="row2">
+              <div class="field">
+                <label>Query logs retention</label>
+                <select>
+                  <option>30 days</option>
+                  <option selected>90 days</option>
+                  <option>180 days</option>
+                  <option>1 year</option>
+                  <option>Forever</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Audit logs retention</label>
+                <select>
+                  <option>90 days</option>
+                  <option selected>1 year</option>
+                  <option>2 years</option>
+                  <option>Forever</option>
+                </select>
+              </div>
+            </div>
+            <div class="row2">
+              <div class="field">
+                <label>Pipeline run history</label>
+                <select>
+                  <option>50 runs</option>
+                  <option selected>100 runs</option>
+                  <option>500 runs</option>
+                  <option>Unlimited</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Auto-archive inactive data</label>
+                <select>
+                  <option>Never</option>
+                  <option>After 6 months</option>
+                  <option selected>After 1 year</option>
+                  <option>After 2 years</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Backup & recovery</div>
+            <div class="card-desc">Automated backup configuration</div>
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">Automated daily backups</div>
+                <div class="toggle-desc">Backup all data every day at 02:00 UTC</div>
+              </div>
+              <label class="toggle"><input type="checkbox" checked onchange="showToast('Backup setting updated')"><span class="toggle-slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">Cross-region replication</div>
+                <div class="toggle-desc">Replicate backups to a secondary region</div>
+              </div>
+              <label class="toggle"><input type="checkbox" onchange="showToast('Replication setting updated')"><span class="toggle-slider"></span></label>
+            </div>
+            <hr class="card-divider">
+            <div style="display:flex;gap:8px;align-items:center;">
+              <button class="btn-sm" onclick="showToast('Manual backup started...')">Run backup now</button>
+              <span style="font-size:11px;color:#888;">Last backup: today at 02:00 UTC — 4.1 GB</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ API KEYS ══ -->
+        <div class="settings-section" id="section-api">
+          <div class="section-title">API keys</div>
+          <div class="section-desc">Manage programmatic access to the DWMS API</div>
+
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+              <div>
+                <div class="card-title" style="margin-bottom:0;">Active API keys</div>
+                <div class="card-desc" style="margin-bottom:0;margin-top:2px;">Keys grant access to the DWMS REST API</div>
+              </div>
+              <button class="btn-primary" onclick="generateKey()">+ Generate key</button>
+            </div>
+            <table class="api-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Key</th>
+                  <th>Scope</th>
+                  <th>Created</th>
+                  <th>Last used</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="apiKeysBody"></tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <div class="card-title">API documentation</div>
+            <div class="card-desc">Learn how to use the DWMS API</div>
+            <div style="background:#1a1a1a;border-radius:8px;padding:1rem;font-family:'Courier New',monospace;font-size:11px;line-height:1.7;color:#ccc;">
+              <div style="color:#85B7EB;">GET</div>
+              <div>https://api.dwms.company.com/v1/sources</div>
+              <div style="color:#85B7EB;margin-top:8px;">Authorization:</div>
+              <div>Bearer <span style="color:#97C459;">dwms_live_xxxxxxxxxxxxxxxx</span></div>
+              <div style="color:#85B7EB;margin-top:8px;">Response:</div>
+              <div style="color:#EF9F27;">{ "sources": [...], "total": 9 }</div>
+            </div>
+            <div style="margin-top:0.75rem;">
+              <button class="btn-sm" onclick="showToast('Opening API docs...')">View full documentation →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ AUDIT LOG ══ -->
+        <div class="settings-section" id="section-audit">
+          <div class="section-title">Audit log</div>
+          <div class="section-desc">Track all administrative actions and system events</div>
+
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+              <div class="card-title" style="margin-bottom:0;">Recent events</div>
+              <button class="btn-sm" onclick="exportAuditLog()">Export CSV</button>
+            </div>
+            <div id="auditLogBody"></div>
+          </div>
+        </div>
+
+        <!-- ══ BILLING ══ -->
+        <div class="settings-section" id="section-billing">
+          <div class="section-title">Plan & billing</div>
+          <div class="section-desc">Manage your subscription and payment details</div>
+
+          <div class="plan-card">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;">
+              <div>
+                <div style="font-size:11px;color:#B5D4F4;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;">Current plan</div>
+                <div class="plan-name">Enterprise</div>
+                <div class="plan-desc">Billed annually · \$899 / month</div>
+              </div>
+              <span class="badge green">Active</span>
+            </div>
+            <div class="plan-features">
+              <div class="plan-feature">
+                <svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" fill="rgba(255,255,255,0.2)"/><path d="M4 7l2 2 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                5 TB storage
+              </div>
+              <div class="plan-feature">
+                <svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" fill="rgba(255,255,255,0.2)"/><path d="M4 7l2 2 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Unlimited users & pipelines
+              </div>
+              <div class="plan-feature">
+                <svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" fill="rgba(255,255,255,0.2)"/><path d="M4 7l2 2 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Priority support & SLA 99.9%
+              </div>
+              <div class="plan-feature">
+                <svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" fill="rgba(255,255,255,0.2)"/><path d="M4 7l2 2 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Advanced RBAC & audit logs
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Billing information</div>
+            <div class="card-desc">Your current billing details</div>
+            <div class="billing-row">
+              <span class="billing-label">Plan</span>
+              <span class="billing-value">Enterprise (Annual)</span>
+            </div>
+            <div class="billing-row">
+              <span class="billing-label">Monthly cost</span>
+              <span class="billing-value">\$899 / month</span>
+            </div>
+            <div class="billing-row">
+              <span class="billing-label">Next billing date</span>
+              <span class="billing-value">1 January 2026</span>
+            </div>
+            <div class="billing-row">
+              <span class="billing-label">Payment method</span>
+              <span class="billing-value">Visa •••• 4242</span>
+            </div>
+            <div class="billing-row">
+              <span class="billing-label">Billing email</span>
+              <span class="billing-value">billing@company.com</span>
+            </div>
+            <div class="billing-row">
+              <span class="billing-label">Status</span>
+              <span class="badge green">Active</span>
+            </div>
+            <hr class="card-divider">
+            <div style="display:flex;gap:8px;">
+              <button class="btn-sm" onclick="showToast('Redirecting to billing portal...')">Update payment method</button>
+              <button class="btn-sm" onclick="showToast('Invoice downloaded')">Download invoice</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Usage this month</div>
+            <div class="card-desc">Resource consumption for the current billing cycle</div>
+            <div class="billing-row">
+              <span class="billing-label">Active users</span>
+              <span class="billing-value">12 / Unlimited</span>
+            </div>
+            <div class="billing-row">
+              <span class="billing-label">Pipelines</span>
+              <span class="billing-value">8 / Unlimited</span>
+            </div>
+            <div class="billing-row">
+              <span class="billing-label">Storage used</span>
+              <span class="billing-value">4.2 TB / 5 TB</span>
+            </div>
+            <div class="billing-row">
+              <span class="billing-label">API requests</span>
+              <span class="billing-value">124,580 / Unlimited</span>
+            </div>
+            <div class="billing-row">
+              <span class="billing-label">Query executions</span>
+              <span class="billing-value">6,820 this month</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Billing history</div>
+            <div class="card-desc">Past invoices and payments</div>
+            <table class="api-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Description</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1 Dec 2025</td>
+                  <td>Enterprise Plan — December 2025</td>
+                  <td>\$899.00</td>
+                  <td><span class="badge green">Paid</span></td>
+                  <td><button class="btn-sm" onclick="showToast('Invoice downloaded')">PDF</button></td>
+                </tr>
+                <tr>
+                  <td>1 Nov 2025</td>
+                  <td>Enterprise Plan — November 2025</td>
+                  <td>\$899.00</td>
+                  <td><span class="badge green">Paid</span></td>
+                  <td><button class="btn-sm" onclick="showToast('Invoice downloaded')">PDF</button></td>
+                </tr>
+                <tr>
+                  <td>1 Oct 2025</td>
+                  <td>Enterprise Plan — October 2025</td>
+                  <td>\$899.00</td>
+                  <td><span class="badge green">Paid</span></td>
+                  <td><button class="btn-sm" onclick="showToast('Invoice downloaded')">PDF</button></td>
+                </tr>
+                <tr>
+                  <td>1 Sep 2025</td>
+                  <td>Enterprise Plan — September 2025</td>
+                  <td>\$899.00</td>
+                  <td><span class="badge green">Paid</span></td>
+                  <td><button class="btn-sm" onclick="showToast('Invoice downloaded')">PDF</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ══ DANGER ZONE ══ -->
+        <div class="settings-section" id="section-danger">
+          <div class="section-title">Danger zone</div>
+          <div class="section-desc">Irreversible and destructive actions — proceed with caution</div>
+
+          <div class="danger-card">
+            <div class="danger-card-title">Reset all settings</div>
+            <div class="danger-card-desc">
+              Revert all platform settings to their factory defaults.
+              This will not affect your data sources or pipelines.
+            </div>
+            <div class="danger-row">
+              <span style="font-size:12px;color:#888;">This action cannot be undone.</span>
+              <button class="btn-warning" onclick="confirmDanger('reset')">Reset settings</button>
+            </div>
+          </div>
+
+          <div class="danger-card">
+            <div class="danger-card-title">Purge all query logs</div>
+            <div class="danger-card-desc">
+              Permanently delete all stored query logs and execution history.
+              This frees up storage but removes all query audit trails.
+            </div>
+            <div class="danger-row">
+              <span style="font-size:12px;color:#888;">Estimated space to recover: ~12 GB</span>
+              <button class="btn-danger" onclick="confirmDanger('purge-logs')">Purge logs</button>
+            </div>
+          </div>
+
+          <div class="danger-card">
+            <div class="danger-card-title">Disconnect all data sources</div>
+            <div class="danger-card-desc">
+              Remove all connected data sources from the platform.
+              Pipelines using these sources will be disabled automatically.
+            </div>
+            <div class="danger-row">
+              <span style="font-size:12px;color:#888;">9 sources currently connected.</span>
+              <button class="btn-danger" onclick="confirmDanger('disconnect-sources')">Disconnect all</button>
+            </div>
+          </div>
+
+          <div class="danger-card">
+            <div class="danger-card-title">Delete all users</div>
+            <div class="danger-card-desc">
+              Permanently remove all non-admin user accounts from the platform.
+              This action cannot be undone and will immediately revoke their access.
+            </div>
+            <div class="danger-row">
+              <span style="font-size:12px;color:#888;">11 non-admin users will be removed.</span>
+              <button class="btn-danger" onclick="confirmDanger('delete-users')">Delete all users</button>
+            </div>
+          </div>
+
+          <div class="danger-card">
+            <div class="danger-card-title">Delete workspace</div>
+            <div class="danger-card-desc">
+              Permanently delete this entire DWMS workspace including all data sources,
+              pipelines, schemas, users, and settings. Your subscription will be cancelled.
+              This action is <strong>irreversible</strong>.
+            </div>
+            <div class="danger-row">
+              <span style="font-size:12px;color:#888;">All data will be permanently destroyed.</span>
+              <button class="btn-danger" onclick="confirmDanger('delete-workspace')">Delete workspace</button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end settings-content -->
+    </div><!-- end settings-layout -->
+  </div><!-- end main -->
+
+</div><!-- end app -->
+
+<!-- ── Confirm Modal ── -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal">
+    <div class="modal-title" id="confirmTitle">Are you sure?</div>
+    <div class="modal-sub" id="confirmSub">This action cannot be undone.</div>
+    <div class="field">
+      <label id="confirmLabel">Type <strong>CONFIRM</strong> to proceed</label>
+      <input type="text" id="confirmInput" placeholder="Type CONFIRM" />
+    </div>
+    <div id="confirmError" style="display:none;font-size:12px;color:#a32d2d;
+      padding:7px 10px;background:#fcebeb;border-radius:8px;margin-top:6px;">
+      Please type CONFIRM to proceed.
+    </div>
+    <div class="modal-footer">
+      <button class="btn-sm" onclick="closeConfirmModal()">Cancel</button>
+      <button class="btn-danger" onclick="executeDanger()">Confirm action</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast ── -->
+<div class="toast" id="toast">
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+    <circle cx="7" cy="7" r="6" fill="#3B6D11"/>
+    <path d="M4 7l2 2 4-4" stroke="white" stroke-width="1.5"
+      stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <span id="toastMsg"></span>
+</div>
+
+<script>
+  /* ── Auth ── */
+  const token = localStorage.getItem('token');
+  const user  = JSON.parse(localStorage.getItem('user') || '{}');
+  if (!token) { window.location.href = 'dwms-login.html'; }
+
+  /* ── On Load ── */
+  window.onload = function () {
+    if (user.firstName) {
+      const initials = (user.firstName[0] + (user.lastName ? user.lastName[0] : '')).toUpperCase();
+      document.getElementById('userAvatar').textContent    = initials;
+      document.getElementById('userName').textContent      = user.firstName + ' ' + (user.lastName || '');
+      document.getElementById('userRole').textContent      = user.role || 'Viewer';
+      document.getElementById('profileAvatar').textContent = initials;
+      document.getElementById('profileDisplayName').textContent =
+        user.firstName + ' ' + (user.lastName || '');
+      document.getElementById('pfFirstName').value = user.firstName;
+      document.getElementById('pfLastName').value  = user.lastName || '';
+      document.getElementById('pfEmail').value     = user.email    || '';
+    }
+    renderSessions();
+    renderApiKeys();
+    renderAuditLog();
+    renderStorageBreakdown();
+  };
+
+  function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = 'dwms-login.html';
+  }
+
+  /* ── Section Switcher ── */
+  function switchSection(id, el) {
+    document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.settings-nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('section-' + id).classList.add('active');
+    el.classList.add('active');
+  }
+
+  /* ── Avatar Live Update ── */
+  function updateAvatar() {
+    const f = document.getElementById('pfFirstName').value.trim();
+    const l = document.getElementById('pfLastName').value.trim();
+    const initials = (f[0] || '') + (l[0] || '');
+    document.getElementById('profileAvatar').textContent     = initials.toUpperCase() || '?';
+    document.getElementById('profileDisplayName').textContent = (f + ' ' + l).trim() || 'Your Name';
+  }
+
+  /* ── Password Strength ── */
+  function checkPwStrength(val) {
+    const bar   = document.getElementById('pwStrengthBar');
+    const label = document.getElementById('pwStrengthLabel');
+    let score   = 0;
+    if (val.length >= 8)             score++;
+    if (/[A-Z]/.test(val))           score++;
+    if (/[0-9]/.test(val))           score++;
+    if (/[^A-Za-z0-9]/.test(val))   score++;
+    const levels = [
+      { w:'0%',   color:'#ccc',     text:'Password strength' },
+      { w:'25%',  color:'#A32D2D',  text:'Weak' },
+      { w:'50%',  color:'#BA7517',  text:'Fair' },
+      { w:'75%',  color:'#378ADD',  text:'Good' },
+      { w:'100%', color:'#3B6D11',  text:'Strong' },
+    ];
+    const lv = levels[score];
+    bar.style.width      = lv.w;
+    bar.style.background = lv.color;
+    label.textContent    = lv.text;
+    label.style.color    = lv.color;
+  }
+
+  /* ── Change Password ── */
+  function changePassword() {
+    const cur  = document.getElementById('secCurrent').value.trim();
+    const nw   = document.getElementById('secNew').value.trim();
+    const conf = document.getElementById('secConfirm').value.trim();
+    if (!cur)          { showToast('Enter your current password'); return; }
+    if (nw.length < 8) { showToast('New password must be at least 8 characters'); return; }
+    if (nw !== conf)   { showToast('New passwords do not match'); return; }
+    document.getElementById('secCurrent').value = '';
+    document.getElementById('secNew').value     = '';
+    document.getElementById('secConfirm').value = '';
+    document.getElementById('pwStrengthBar').style.width = '0%';
+    document.getElementById('pwStrengthLabel').textContent = 'Password strength';
+    document.getElementById('pwStrengthLabel').style.color = '#aaa';
+    showToast('Password updated successfully');
+  }
+
+  /* ── Sessions ── */
+  const sessions = [
+    { device:'Chrome on macOS',  ip:'192.168.1.10', location:'Jakarta, ID',    time:'Active now',   current:true  },
+    { device:'Firefox on Windows', ip:'10.0.0.22',  location:'Bandung, ID',    time:'2 hours ago',  current:false },
+    { device:'Safari on iPhone',   ip:'103.12.8.44', location:'Singapore, SG', time:'Yesterday',    current:false },
+    { device:'Edge on Windows',    ip:'172.16.0.5',  location:'Jakarta, ID',   time:'3 days ago',   current:false },
+  ];
+
+  function renderSessions() {
+    document.getElementById('sessionList').innerHTML = sessions.map((s, i) => `
+      <div style="display:flex;align-items:center;gap:12px;
+        padding:10px 0;border-bottom:0.5px solid #e0e0de;${i===sessions.length-1?'border-bottom:none;':''}">
+        <div style="width:34px;height:34px;border-radius:8px;background:#f5f5f3;
+          display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">
+          ${s.device.includes('iPhone') ? '📱' : '💻'}
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:500;color:#1a1a1a;">
+            ${s.device}
+            ${s.current ? '<span class="badge green" style="margin-left:6px;">This device</span>' : ''}
+          </div>
+          <div style="font-size:11px;color:#888;margin-top:2px;">
+            ${s.ip} · ${s.location} · ${s.time}
+          </div>
+        </div>
+        ${!s.current ? `<button class="btn-sm" style="color:#A32D2D;"
+          onclick="revokeSession(${i})">Revoke</button>` : ''}
+      </div>
+    `).join('');
+  }
+
+  function revokeSession(i) {
+    sessions.splice(i, 1);
+    renderSessions();
+    showToast('Session revoked');
+  }
+
+  function revokeAllSessions() {
+    sessions.splice(1);
+    renderSessions();
+    showToast('All other sessions revoked');
+  }
+
+  /* ── API Keys ── */
+  let apiKeys = [
+    { name:'Dashboard Integration', key:'dwms_live_a1b2c3d4e5f6', scope:'Read only',  created:'Jan 2025', used:'Today'     },
+    { name:'ETL Service Account',   key:'dwms_live_x9y8z7w6v5u4', scope:'Full access', created:'Mar 2025', used:'2 hrs ago' },
+    { name:'Reporting Tool',        key:'dwms_live_m3n4o5p6q7r8', scope:'Read only',  created:'Jul 2025', used:'Yesterday'  },
+  ];
+
+  function renderApiKeys() {
+    document.getElementById('apiKeysBody').innerHTML = apiKeys.map((k, i) => `
+      <tr>
+        <td>${k.name}</td>
+        <td><span class="key-mask">${k.key.slice(0,16)}••••</span></td>
+        <td><span class="badge ${k.scope === 'Full access' ? 'blue' : 'gray'}">${k.scope}</span></td>
+        <td>${k.created}</td>
+        <td>${k.used}</td>
+        <td>
+          <button class="btn-sm" style="color:#A32D2D;border-color:#f09595;"
+            onclick="revokeKey(${i})">Revoke</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function generateKey() {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    const rand  = Array.from({length:16}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
+    apiKeys.push({
+      name:'New API Key',
+      key:'dwms_live_' + rand,
+      scope:'Read only',
+      created:'Just now',
+      used:'Never'
+    });
+    renderApiKeys();
+    showToast('New API key generated');
+  }
+
+  function revokeKey(i) {
+    if (!confirm(`Revoke key "${apiKeys[i].name}"?`)) return;
+    apiKeys.splice(i, 1);
+    renderApiKeys();
+    showToast('API key revoked');
+  }
+
+  /* ── Audit Log ── */
+  const auditEvents = [
+    { dot:'#185FA5', text:'Admin logged in from 192.168.1.10',               user:'Ahmad Doe',  time:'Today 09:14' },
+    { dot:'#3B6D11', text:'Data source "PostgreSQL Prod" synced successfully', user:'System',    time:'Today 09:00' },
+    { dot:'#BA7517', text:'Pipeline "Daily ETL" took 4.2 min (slow threshold)',user:'System',    time:'Today 08:45' },
+    { dot:'#3B6D11', text:'New user "Budi Santoso" created',                  user:'Ahmad Doe', time:'Yesterday 14:22' },
+    { dot:'#3B6D11', text:'API key "Reporting Tool" generated',               user:'Ahmad Doe', time:'Yesterday 11:10' },
+    { dot:'#A32D2D', text:'Login failed for user@unknown.com (3 attempts)',    user:'Unknown',   time:'Yesterday 07:33' },
+    { dot:'#3B6D11', text:'Schema refresh completed for warehouse_prod',       user:'System',    time:'2 days ago 02:10' },
+    { dot:'#BA7517', text:'Storage usage reached 80% threshold',               user:'System',    time:'2 days ago 00:05' },
+    { dot:'#3B6D11', text:'Backup completed — 4.1 GB archived',               user:'System',    time:'3 days ago 02:00' },
+    { dot:'#185FA5', text:'Settings updated by Ahmad Doe',                    user:'Ahmad Doe', time:'3 days ago 10:48' },
+  ];
+
+  function renderAuditLog() {
+    document.getElementById('auditLogBody').innerHTML = auditEvents.map(e => `
+      <div class="audit-item">
+        <div class="audit-dot" style="background:${e.dot};"></div>
+        <div>
+          <div class="audit-text">${e.text}</div>
+          <div class="audit-meta">${e.user} · ${e.time}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function exportAuditLog() {
+    const rows = ['Event,User,Time', ...auditEvents.map(e =>
+      `"${e.text}","${e.user}","${e.time}"`)].join('\n');
+    const blob = new Blob([rows], { type:'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url; a.download = 'dwms-audit-log.csv'; a.click();
+    URL.revokeObjectURL(url);
+    showToast('Audit log exported');
+  }
+
+  /* ── Storage Breakdown ── */
+  const storageItems = [
+    { label:'SQL Databases',  size:'1.56 TB', pct:37, color:'#185FA5' },
+    { label:'Cloud Storage',  size:'2.18 TB', pct:52, color:'#378ADD' },
+    { label:'NoSQL Databases', size:'0.22 TB', pct:5, color:'#6B3FA0' },
+    { label:'File Uploads',   size:'0.24 TB', pct:6,  color:'#BA7517' },
+  ];
+
+  function renderStorageBreakdown() {
+    document.getElementById('storageBreakdown').innerHTML =
+      storageItems.map(s => `
+        <div style="margin-bottom:0.75rem;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;
+            color:#1a1a1a;margin-bottom:4px;">
+            <span>${s.label}</span>
+            <span style="color:#888;">${s.size}</span>
+          </div>
+          <div style="height:4px;background:#e0e0de;border-radius:2px;overflow:hidden;">
+            <div style="width:${s.pct}%;height:100%;background:${s.color};border-radius:2px;"></div>
+          </div>
+        </div>
+      `).join('');
+  }
+
+  /* ── Appearance ── */
+  function selectTheme(el, theme) {
+    el.parentElement.querySelectorAll('div').forEach(d => {
+      d.style.border      = '1.5px solid #ccc';
+      d.querySelector('div:last-child').style.color = '#555';
+    });
+    el.style.border = '2px solid #185FA5';
+    el.querySelector('div:last-child').style.color = '#185FA5';
+    showToast(`Theme set to ${theme.charAt(0).toUpperCase() + theme.slice(1)}`);
+  }
+
+  function selectColor(el, color) {
+    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+    el.classList.add('selected');
+    showToast(`Accent color updated`);
+  }
+
+  function selectDensity(el) {
+    const parent = document.getElementById('densityBtns');
+    parent.querySelectorAll('button').forEach(b => {
+      b.className = 'btn-sm';
+      b.style.fontSize = '11px';
+    });
+    el.className  = 'btn-primary';
+    el.style.fontSize = '11px';
+    showToast(`Density set to ${el.textContent}`);
+  }
+
+  /* ── Save / Reset ── */
+  function saveAll() {
+    const firstName = document.getElementById('pfFirstName').value.trim();
+    const lastName  = document.getElementById('pfLastName').value.trim();
+    const email     = document.getElementById('pfEmail').value.trim();
+    if (firstName) {
+      const updated = { ...user, firstName, lastName, email };
+      localStorage.setItem('user', JSON.stringify(updated));
+      document.getElementById('userAvatar').textContent =
+        (firstName[0] + (lastName[0] || '')).toUpperCase();
+      document.getElementById('userName').textContent = firstName + ' ' + lastName;
+    }
+    showToast('All settings saved successfully');
+  }
+
+  function resetChanges() {
+    if (!confirm('Reset all unsaved changes?')) return;
+    document.getElementById('pfFirstName').value = user.firstName || 'Ahmad';
+    document.getElementById('pfLastName').value  = user.lastName  || 'Doe';
+    document.getElementById('pfEmail').value     = user.email     || 'admin@company.com';
+    updateAvatar();
+    showToast('Changes reset to last saved state');
+  }
+
+  /* ── Danger Zone ── */
+  let pendingDangerAction = null;
+  const dangerMessages = {
+    'reset':               { title:'Reset all settings',        sub:'All platform settings will be restored to factory defaults.' },
+    'purge-logs':          { title:'Purge all query logs',       sub:'All query logs will be permanently deleted. This cannot be undone.' },
+    'disconnect-sources':  { title:'Disconnect all data sources',sub:'All 9 data sources will be removed and pipelines disabled.' },
+    'delete-users':        { title:'Delete all users',           sub:'All 11 non-admin user accounts will be permanently removed.' },
+    'delete-workspace':    { title:'Delete workspace',           sub:'Your entire DWMS workspace will be permanently destroyed.' },
+  };
+
+  function confirmDanger(action) {
+    pendingDangerAction = action;
+    const msg = dangerMessages[action];
+    document.getElementById('confirmTitle').textContent = msg.title;
+    document.getElementById('confirmSub').textContent   = msg.sub;
+    document.getElementById('confirmInput').value       = '';
+    document.getElementById('confirmError').style.display = 'none';
+    document.getElementById('confirmModal').classList.add('open');
+  }
+
+  function closeConfirmModal() {
+    document.getElementById('confirmModal').classList.remove('open');
+    pendingDangerAction = null;
+  }
+
+  function executeDanger() {
+    const val = document.getElementById('confirmInput').value.trim();
+    if (val !== 'CONFIRM') {
+      document.getElementById('confirmError').style.display = 'block';
+      return;
+    }
+    closeConfirmModal();
+    const toastMsgs = {
+      'reset':              'Settings reset to factory defaults',
+      'purge-logs':         'All query logs purged successfully',
+      'disconnect-sources': 'All data sources disconnected',
+      'delete-users':       'All non-admin users deleted',
+      'delete-workspace':   'Workspace deletion initiated...',
+    };
+    showToast(toastMsgs[pendingDangerAction] || 'Action completed');
+    if (pendingDangerAction === 'delete-workspace') {
+      setTimeout(() => {
+        localStorage.clear();
+        window.location.href = 'dwms-login.html';
+      }, 2000);
+    }
+  }
+
+  /* Close confirm modal on overlay click */
+  document.getElementById('confirmModal').addEventListener('click', function(e) {
+    if (e.target === this) closeConfirmModal();
+  });
+
+  /* ── Toast ── */
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toastMsg').textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+  }
+</script>
+</body>
+</html>

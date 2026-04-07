@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DWMS — Login</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f5f3;
+      min-height: 100vh;
+      display: flex;
+    }
+
+    .page {
+      width: 100%;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ── Left Panel ── */
+    .left-panel {
+      width: 44%;
+      background: #0C447C;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 2.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .left-panel::before {
+      content: '';
+      position: absolute;
+      top: -80px; right: -80px;
+      width: 280px; height: 280px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .left-panel::after {
+      content: '';
+      position: absolute;
+      bottom: -60px; left: -60px;
+      width: 220px; height: 220px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.04);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      width: 36px; height: 36px;
+      background: #378ADD;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .brand-icon svg { width: 20px; height: 20px; }
+
+    .brand-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: 0.3px;
+    }
+
+    .left-content { position: relative; z-index: 1; }
+
+    .left-title {
+      font-size: 26px;
+      font-weight: 600;
+      color: #fff;
+      line-height: 1.35;
+      margin-bottom: 1rem;
+    }
+
+    .left-desc {
+      font-size: 13px;
+      color: #B5D4F4;
+      line-height: 1.7;
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 1rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .stat-box {
+      background: rgba(255,255,255,0.08);
+      border: 0.5px solid rgba(255,255,255,0.15);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      flex: 1;
+    }
+
+    .stat-number {
+      font-size: 20px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: #85B7EB;
+      margin-top: 2px;
+    }
+
+    /* ── Right Panel ── */
+    .right-panel {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2.5rem;
+      background: #f5f5f3;
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 360px;
+    }
+
+    .login-title {
+      font-size: 22px;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 0.4rem;
+    }
+
+    .login-sub {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 2rem;
+    }
+
+    /* ── Role Selector ── */
+    .role-label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+
+    .role-selector {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 1.25rem;
+    }
+
+    .role-btn {
+      flex: 1;
+      height: 36px;
+      background: #efefed;
+      border: 0.5px solid #ddd;
+      border-radius: 8px;
+      font-size: 12px;
+      font-family: inherit;
+      color: #555;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .role-btn:hover { background: #e2e2e0; }
+
+    .role-btn.active {
+      background: #E6F1FB;
+      border-color: #378ADD;
+      color: #185FA5;
+      font-weight: 600;
+    }
+
+    /* ── Form Fields ── */
+    .field { margin-bottom: 1.1rem; }
+
+    .field label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: #555;
+      margin-bottom: 6px;
+    }
+
+    .field-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .field-row label { margin-bottom: 0; }
+
+    .field input {
+      width: 100%;
+      height: 40px;
+      border-radius: 8px;
+      border: 0.5px solid #ccc;
+      background: #fff;
+      padding: 0 12px;
+      font-size: 14px;
+      color: #1a1a1a;
+      font-family: inherit;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      outline: none;
+    }
+
+    .field input:focus {
+      border-color: #378ADD;
+      box-shadow: 0 0 0 3px rgba(55,138,221,0.12);
+    }
+
+    .forgot {
+      font-size: 12px;
+      color: #378ADD;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .forgot:hover { text-decoration: underline; }
+
+    /* ── Remember Me ── */
+    .remember {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 1.5rem;
+      font-size: 13px;
+      color: #666;
+      cursor: pointer;
+    }
+
+    .remember input[type=checkbox] { cursor: pointer; }
+
+    /* ── Button ── */
+    .btn-login {
+      width: 100%;
+      height: 40px;
+      background: #185FA5;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      letter-spacing: 0.2px;
+    }
+
+    .btn-login:hover { background: #0C447C; }
+    .btn-login:active { transform: scale(0.98); }
+
+    /* ── Messages ── */
+    .error-msg {
+      display: none;
+      font-size: 12px;
+      color: #a32d2d;
+      margin-top: 0.75rem;
+      padding: 8px 10px;
+      background: #fcebeb;
+      border-radius: 8px;
+      border: 0.5px solid #f09595;
+    }
+
+    .success-msg {
+      display: none;
+      font-size: 12px;
+      color: #3b6d11;
+      margin-top: 0.75rem;
+      padding: 8px 10px;
+      background: #eaf3de;
+      border-radius: 8px;
+      border: 0.5px solid #97c459;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      .page { flex-direction: column; }
+      .left-panel { width: 100%; min-height: 220px; }
+      .stats-row { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- Left Panel -->
+    <div class="left-panel">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="2" y="2" width="7" height="7" rx="1.5" fill="white" opacity="0.9"/>
+            <rect x="11" y="2" width="7" height="7" rx="1.5" fill="white" opacity="0.6"/>
+            <rect x="2" y="11" width="7" height="7" rx="1.5" fill="white" opacity="0.6"/>
+            <rect x="11" y="11" width="7" height="7" rx="1.5" fill="white" opacity="0.35"/>
+          </svg>
+        </div>
+        <span class="brand-name">DWMS</span>
+      </div>
+
+      <div class="left-content">
+        <div class="left-title">Data Warehouse<br>Management System</div>
+        <div class="left-desc">Centralize, manage, and visualize your organization's data assets from one unified platform.</div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="stat-number">128</div>
+          <div class="stat-label">Data sources</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-number">4.2TB</div>
+          <div class="stat-label">Total storage</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-number">99.9%</div>
+          <div class="stat-label">Uptime</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="right-panel">
+      <div class="login-card">
+        <div class="login-title">Welcome back</div>
+        <div class="login-sub">Sign in to your account to continue</div>
+
+        <!-- Role Selector -->
+        <div class="role-label">Sign in as</div>
+        <div class="role-selector">
+          <button class="role-btn active" onclick="setRole(this)">Admin</button>
+          <button class="role-btn" onclick="setRole(this)">Analyst</button>
+          <button class="role-btn" onclick="setRole(this)">Viewer</button>
+        </div>
+
+        <!-- Email -->
+        <div class="field">
+          <label for="email">Email address</label>
+          <input type="email" id="email" placeholder="you@company.com" />
+        </div>
+
+        <!-- Password -->
+        <div class="field">
+          <div class="field-row">
+            <label for="password">Password</label>
+            <a class="forgot" href="#">Forgot password?</a>
+          </div>
+          <input type="password" id="password" placeholder="••••••••" />
+        </div>
+
+        <!-- Remember Me -->
+        <label class="remember">
+          <input type="checkbox" id="remember" />
+          Keep me signed in for 30 days
+        </label>
+
+        <!-- Submit -->
+        <button class="btn-login" onclick="handleLogin()">Sign in</button>
+
+        <!-- Messages -->
+        <div class="error-msg" id="error-msg"></div>
+        <div class="success-msg" id="success-msg">Login successful! Redirecting to dashboard...</div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function setRole(btn) {
+      document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function handleLogin() {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const err = document.getElementById('error-msg');
+      const success = document.getElementById('success-msg');
+
+      err.style.display = 'none';
+      success.style.display = 'none';
+
+      if (!email || !password) {
+        err.textContent = 'Please fill in your email and password.';
+        err.style.display = 'block';
+        return;
+      }
+
+      if (!email.includes('@')) {
+        err.textContent = 'Please enter a valid email address.';
+        err.style.display = 'block';
+        return;
+      }
+
+      if (password.length < 6) {
+        err.textContent = 'Password must be at least 6 characters.';
+        err.style.display = 'block';
+        return;
+      }
+
+      // ✅ Login passed — show success
+      success.style.display = 'block';
+
+      // TODO: Replace with real API call, e.g:
+      fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) {
+          success.style.display = 'none';
+          err.textContent = data.error;
+          err.style.display = 'block';
+          return;
+        }
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        window.location.href = 'dwms-dashboard.html';
+      })
+      .catch(() => {
+        success.style.display = 'none';
+        err.textContent = 'Server error. Make sure the backend is running.';
+        err.style.display = 'block';
+      });
+    }
+  </script>
+</body>
+</html>

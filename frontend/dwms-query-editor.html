@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DWMS — Query Editor</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; height: 100vh; display: flex; overflow: hidden; }
+
+    /* ── Sidebar ── */
+    .sidebar { width: 200px; background: #0C447C; display: flex; flex-direction: column; flex-shrink: 0; height: 100vh; }
+    .sb-brand { display: flex; align-items: center; gap: 8px; padding: 1.25rem 1rem; border-bottom: 0.5px solid rgba(255,255,255,0.1); }
+    .sb-icon { width: 28px; height: 28px; background: #378ADD; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+    .sb-icon svg { width: 16px; height: 16px; }
+    .sb-name { font-size: 13px; font-weight: 600; color: #fff; }
+    .sb-nav { flex: 1; padding: 0.75rem 0; overflow-y: auto; }
+    .nav-sec { font-size: 10px; color: #85B7EB; padding: 0.75rem 1rem 0.25rem; letter-spacing: 0.8px; text-transform: uppercase; }
+    .nav-it { display: flex; align-items: center; gap: 8px; padding: 0.5rem 1rem; font-size: 13px; color: #B5D4F4; cursor: pointer; text-decoration: none; transition: background 0.15s; }
+    .nav-it:hover { background: rgba(255,255,255,0.07); }
+    .nav-it.active { background: rgba(255,255,255,0.12); color: #fff; border-right: 2px solid #378ADD; }
+    .nav-it svg { width: 15px; height: 15px; opacity: 0.8; flex-shrink: 0; }
+    .sb-foot { padding: 1rem; border-top: 0.5px solid rgba(255,255,255,0.1); }
+    .av-row { display: flex; align-items: center; gap: 8px; }
+    .av { width: 28px; height: 28px; border-radius: 50%; background: #378ADD; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #fff; }
+    .av-name { font-size: 12px; color: #fff; font-weight: 600; }
+    .av-role { font-size: 10px; color: #85B7EB; }
+    .sidebar-footer { padding: 1rem; border-top: 0.5px solid rgba(255,255,255,0.1); }
+    .avatar-row { display: flex; align-items: center; gap: 8px; }
+    .avatar { width: 28px; height: 28px; border-radius: 50%; background: #378ADD; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #fff; }
+    .avatar-name { font-size: 12px; color: #fff; font-weight: 600; }
+    .avatar-role { font-size: 10px; color: #85B7EB; }
+
+    /* ── Main ── */
+    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; height: 100vh; overflow: hidden; }
+    .topbar { background: #fff; border-bottom: 0.5px solid #e0e0de; padding: 0.75rem 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .topbar-title { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+    .topbar-sub { font-size: 12px; color: #888; margin-top: 1px; }
+
+    /* ── Editor Layout ── */
+    .editor-layout { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+
+    /* ── Left Panel ── */
+    .left-panel { width: 200px; border-right: 0.5px solid #e0e0de; background: #fff; flex-shrink: 0; overflow-y: auto; display: flex; flex-direction: column; }
+    .panel-head { font-size: 11px; font-weight: 600; color: #888; padding: 0.75rem 1rem 0.5rem; border-bottom: 0.5px solid #e0e0de; letter-spacing: 0.5px; text-transform: uppercase; flex-shrink: 0; }
+    .tree-table { display: flex; align-items: center; gap: 6px; padding: 6px 1rem; font-size: 12px; color: #1a1a1a; cursor: pointer; border-left: 2px solid transparent; }
+    .tree-table:hover { background: #f5f5f3; }
+    .tree-table.active { border-left-color: #185FA5; background: #E6F1FB; color: #0C447C; }
+    .tree-table svg { width: 13px; height: 13px; flex-shrink: 0; }
+    .tree-field { display: flex; align-items: center; gap: 5px; padding: 3px 1rem 3px 2.2rem; font-size: 11px; color: #888; }
+    .pk-badge { font-size: 9px; padding: 1px 4px; border-radius: 3px; font-weight: 600; background: #FAEEDA; color: #633806; }
+    .fk-badge { font-size: 9px; padding: 1px 4px; border-radius: 3px; font-weight: 600; background: #E6F1FB; color: #0C447C; }
+    .saved-item { padding: 5px 1rem; font-size: 11px; color: #888; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .saved-item:hover { background: #f5f5f3; color: #1a1a1a; }
+    .saved-item svg { width: 11px; height: 11px; flex-shrink: 0; }
+
+    /* ── Editor Main ── */
+    .editor-main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+    .query-toolbar { display: flex; align-items: center; gap: 8px; padding: 0.6rem 1rem; border-bottom: 0.5px solid #e0e0de; background: #fff; flex-shrink: 0; flex-wrap: wrap; }
+    .btn-run { font-size: 12px; padding: 5px 14px; border-radius: 8px; border: none; background: #185FA5; color: #fff; cursor: pointer; font-family: inherit; font-weight: 600; display: flex; align-items: center; gap: 5px; }
+    .btn-run:hover { background: #0C447C; }
+    .btn-run svg { width: 12px; height: 12px; }
+    .btn-sm { font-size: 11px; padding: 4px 10px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; color: #1a1a1a; cursor: pointer; font-family: inherit; }
+    .btn-sm:hover { background: #f5f5f3; }
+    .query-select { font-size: 11px; height: 28px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; color: #1a1a1a; padding: 0 8px; font-family: inherit; }
+
+    /* ── SQL Editor ── */
+    .editor-area { background: #1a1a1a; flex-shrink: 0; position: relative; }
+    .line-nums { position: absolute; left: 0; top: 0; bottom: 0; width: 36px; background: #111; display: flex; flex-direction: column; padding: 1rem 0; border-right: 0.5px solid #333; pointer-events: none; }
+    .line-num { font-size: 11px; color: #555; text-align: right; padding: 0 6px; line-height: 1.6; font-family: 'Courier New', monospace; }
+    .sql-editor { width: 100%; padding: 1rem 1rem 1rem 46px; font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.6; color: #ccc; border: none; outline: none; resize: none; background: transparent; min-height: 180px; }
+
+    /* ── Results ── */
+    .results-area { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+    .results-bar { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 1rem; border-bottom: 0.5px solid #e0e0de; border-top: 0.5px solid #e0e0de; background: #fff; flex-shrink: 0; }
+    .results-info { font-size: 12px; color: #888; }
+    .results-info span { color: #1a1a1a; font-weight: 600; }
+    .results-tabs { display: flex; gap: 4px; }
+    .rtab { font-size: 11px; padding: 3px 10px; border-radius: 20px; border: 0.5px solid #ccc; background: transparent; color: #888; cursor: pointer; font-family: inherit; }
+    .rtab.active { background: #185FA5; color: #fff; border-color: #185FA5; }
+    .results-table-wrap { overflow: auto; flex: 1; }
+    .results-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .results-table th { background: #f5f5f3; text-align: left; font-weight: 600; font-size: 11px; color: #888; padding: 6px 12px; border-bottom: 0.5px solid #e0e0de; white-space: nowrap; position: sticky; top: 0; }
+    .results-table td { padding: 6px 12px; color: #1a1a1a; border-bottom: 0.5px solid #e0e0de; white-space: nowrap; font-family: 'Courier New', monospace; font-size: 11px; }
+    .results-table tr:hover td { background: #f5f5f3; }
+    .null-val { color: #aaa; font-style: italic; }
+    .status-bar { display: flex; align-items: center; gap: 12px; padding: 0.4rem 1rem; background: #f5f5f3; border-top: 0.5px solid #e0e0de; font-size: 11px; color: #888; flex-shrink: 0; }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .explain-box { padding: 1rem; font-family: 'Courier New', monospace; font-size: 11px; line-height: 1.8; color: #888; }
+  </style>
+</head>
+<body>
+
+  <script>
+      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (!token) {
+        window.location.href = 'dwms-login.html';
+      }
+    </script>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sb-brand">
+      <div class="sb-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" fill="white" opacity="0.9"/><rect x="9" y="1" width="6" height="6" rx="1" fill="white" opacity="0.6"/><rect x="1" y="9" width="6" height="6" rx="1" fill="white" opacity="0.6"/><rect x="9" y="9" width="6" height="6" rx="1" fill="white" opacity="0.35"/></svg></div>
+      <span class="sb-name">DWMS</span>
+    </div>
+    <div class="sb-nav">
+      <div class="nav-sec">Main</div>
+      <a href="dwms-dashboard.html" class="nav-it">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" fill="currentColor"/><rect x="9" y="1" width="6" height="6" rx="1" fill="currentColor" opacity="0.5"/><rect x="1" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.5"/><rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.3"/></svg>Dashboard
+      </a>
+      <a href="dwms-data-resource.html" class="nav-it">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Data sources
+      </a>
+      <a href="dwms-etl-pipelines.html" class="nav-it">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M8 2v4l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/></svg>ETL pipelines
+      </a>
+      <a href="dwms-schema-manager.html" class="nav-it">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="12" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>Schema manager
+      </a>
+      <a href="#" class="nav-it active">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M5 7h6M5 10h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Query editor
+      </a>
+      <div class="nav-sec">Admin</div>
+      <a href="dwms-user-management.html" class="nav-it">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M2 14c0-3 2.7-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Users
+      </a>
+      <a href="dwms-setting.html" class="nav-it">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 2v1.5M8 12.5V14M2 8h1.5M12.5 8H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Settings
+      </a>
+    </div>
+    <div class="sb-foot">
+      <div class="avatar-row">
+        <div class="avatar" id="userAvatar">AD</div>
+        <div class="avatar-info">
+          <div class="avatar-name" id="userName">Admin</div>
+          <div class="avatar-role" id="userRole">Administrator</div>
+        </div>
+      </div>
+      <div style="margin-top:8px;">
+        <button onclick="logout()" style="width:100%;font-size:11px;padding:5px;border-radius:6px;border:0.5px solid rgba(255,255,255,0.2);background:transparent;color:#B5D4F4;cursor:pointer;">
+          Sign out
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">Query editor</div>
+        <div class="topbar-sub">Write and run SQL against your warehouse</div>
+      </div>
+    </div>
+
+    <div class="editor-layout">
+      <!-- Left panel: table tree + saved queries -->
+      <div class="left-panel">
+        <div class="panel-head">Tables</div>
+        <div id="tableTree"></div>
+        <div class="panel-head" style="margin-top:4px;">Saved queries</div>
+        <div>
+          <div class="saved-item" onclick="loadQuery('monthly_revenue')">
+            <svg viewBox="0 0 12 12" fill="none"><path d="M2 2h8v8H2z" stroke="currentColor" stroke-width="1"/><path d="M4 5h4M4 7h3" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
+            Monthly revenue
+          </div>
+          <div class="saved-item" onclick="loadQuery('top_customers')">
+            <svg viewBox="0 0 12 12" fill="none"><path d="M2 2h8v8H2z" stroke="currentColor" stroke-width="1"/><path d="M4 5h4M4 7h3" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
+            Top 10 customers
+          </div>
+          <div class="saved-item" onclick="loadQuery('product_summary')">
+            <svg viewBox="0 0 12 12" fill="none"><path d="M2 2h8v8H2z" stroke="currentColor" stroke-width="1"/><path d="M4 5h4M4 7h3" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
+            Product summary
+          </div>
+          <div class="saved-item" onclick="loadQuery('region_breakdown')">
+            <svg viewBox="0 0 12 12" fill="none"><path d="M2 2h8v8H2z" stroke="currentColor" stroke-width="1"/><path d="M4 5h4M4 7h3" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
+            Region breakdown
+          </div>
+        </div>
+      </div>
+
+      <!-- Editor + results -->
+      <div class="editor-main">
+        <div class="query-toolbar">
+          <button class="btn-run" onclick="runQuery()">
+            <svg viewBox="0 0 12 12" fill="none"><polygon points="3,2 10,6 3,10" fill="white"/></svg>
+            Run query
+          </button>
+          <select class="query-select" id="dbSelect">
+            <option>warehouse_prod</option>
+            <option>warehouse_dev</option>
+            <option>analytics_db</option>
+          </select>
+          <button class="btn-sm" onclick="formatSQL()">Format</button>
+          <button class="btn-sm" onclick="saveQuery()">Save</button>
+          <button class="btn-sm" onclick="exportCSV()">Export CSV</button>
+          <span style="margin-left:auto;font-size:11px;color:#888;" id="queryTime"></span>
+        </div>
+
+        <div class="editor-area">
+          <div class="line-nums" id="lineNums"></div>
+          <textarea class="sql-editor" id="sqlEditor" spellcheck="false"
+            oninput="updateLineNums()" onkeydown="handleTab(event)"></textarea>
+        </div>
+
+        <div class="results-area">
+          <div class="results-bar">
+            <div class="results-info" id="resultsInfo">Run a query to see results</div>
+            <div class="results-tabs">
+              <button class="rtab active" onclick="switchTab('results',this)">Results</button>
+              <button class="rtab" onclick="switchTab('explain',this)">Explain</button>
+            </div>
+          </div>
+          <div class="results-table-wrap" id="resultsWrap">
+            <div style="padding:2rem;text-align:center;color:#aaa;font-size:13px;">
+              Write a query above and click Run query
+            </div>
+          </div>
+          <div class="status-bar">
+            <div class="status-dot" style="background:#3B6D11;" id="statusDot"></div>
+            <span id="statusText">Ready</span>
+            <span style="margin-left:auto;" id="rowCount"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const tables = [
+    { name:'fact_sales',    fields:[{n:'sale_id',t:'BIGINT',k:'pk'},{n:'date_id',t:'INT',k:'fk'},{n:'product_id',t:'INT',k:'fk'},{n:'customer_id',t:'INT',k:'fk'},{n:'quantity',t:'INT',k:''},{n:'revenue',t:'DECIMAL',k:''}] },
+    { name:'dim_date',      fields:[{n:'date_id',t:'INT',k:'pk'},{n:'full_date',t:'DATE',k:''},{n:'year',t:'INT',k:''},{n:'quarter',t:'INT',k:''},{n:'month',t:'INT',k:''}] },
+    { name:'dim_product',   fields:[{n:'product_id',t:'INT',k:'pk'},{n:'product_name',t:'VARCHAR',k:''},{n:'category',t:'VARCHAR',k:''},{n:'unit_price',t:'DECIMAL',k:''}] },
+    { name:'dim_customer',  fields:[{n:'customer_id',t:'INT',k:'pk'},{n:'full_name',t:'VARCHAR',k:''},{n:'email',t:'VARCHAR',k:''},{n:'segment',t:'VARCHAR',k:''}] },
+    { name:'dim_region',    fields:[{n:'region_id',t:'INT',k:'pk'},{n:'city',t:'VARCHAR',k:''},{n:'country',t:'VARCHAR',k:''}] },
+  ];
+
+  const savedQueries = {
+    monthly_revenue:  `SELECT\n  d.year,\n  d.month,\n  SUM(f.revenue) AS total_revenue,\n  COUNT(f.sale_id) AS total_orders\nFROM fact_sales f\nJOIN dim_date d ON f.date_id = d.date_id\nGROUP BY d.year, d.month\nORDER BY d.year, d.month;`,
+    top_customers:    `SELECT\n  c.full_name,\n  c.segment,\n  SUM(f.revenue) AS total_spent,\n  COUNT(f.sale_id) AS orders\nFROM fact_sales f\nJOIN dim_customer c ON f.customer_id = c.customer_id\nGROUP BY c.customer_id, c.full_name, c.segment\nORDER BY total_spent DESC\nLIMIT 10;`,
+    product_summary:  `SELECT\n  p.product_name,\n  p.category,\n  SUM(f.quantity) AS units_sold,\n  SUM(f.revenue) AS revenue\nFROM fact_sales f\nJOIN dim_product p ON f.product_id = p.product_id\nGROUP BY p.product_id, p.product_name, p.category\nORDER BY revenue DESC;`,
+    region_breakdown: `SELECT\n  r.country,\n  r.city,\n  SUM(f.revenue) AS revenue,\n  COUNT(DISTINCT f.customer_id) AS customers\nFROM fact_sales f\nJOIN dim_region r ON f.region_id = r.region_id\nGROUP BY r.region_id, r.country, r.city\nORDER BY revenue DESC;`,
+  };
+
+  const mockResults = {
+    monthly_revenue:  { cols:['year','month','total_revenue','total_orders'], rows:[[2024,1,'$142,830.00',342],[2024,2,'$138,200.00',318],[2024,3,'$165,440.00',398],[2024,4,'$151,900.00',360],[2024,5,'$178,230.00',421],[2024,6,'$193,800.00',445],[2024,7,'$189,500.00',437],[2024,8,'$202,100.00',481],[2024,9,'$215,340.00',504]] },
+    top_customers:    { cols:['full_name','segment','total_spent','orders'], rows:[['Ahmad Wijaya','Enterprise','$28,450.00',84],['Siti Rahayu','Enterprise','$24,200.00',71],['Budi Santoso','Premium','$19,800.00',58],['Dewi Kusuma','Premium','$17,650.00',52],['Eko Prasetyo','Standard','$14,300.00',48],['Fitri Handayani','Enterprise','$13,900.00',44],['Ganda Putra','Standard','$12,400.00',40],['Hani Lestari','Premium','$11,800.00',38],['Irwan Setiawan','Standard','$10,900.00',35],['Joko Widodo','Enterprise','$10,200.00',33]] },
+    product_summary:  { cols:['product_name','category','units_sold','revenue'], rows:[['Laptop Pro 15','Electronics',1240,'$1,860,000.00'],['Wireless Mouse','Accessories',4820,'$144,600.00'],['USB-C Hub','Accessories',3210,'$96,300.00'],['Monitor 27"','Electronics',890,'$534,000.00'],['Keyboard MX','Accessories',2100,'$63,000.00'],['Webcam HD','Electronics',1560,'$93,600.00']] },
+    region_breakdown: { cols:['country','city','revenue','customers'], rows:[['Indonesia','Jakarta','$485,200.00',1240],['Indonesia','Surabaya','$218,400.00',560],['Singapore','Singapore','$312,800.00',820],['Malaysia','Kuala Lumpur','$198,600.00',510],['Philippines','Manila','$145,300.00',380],['Thailand','Bangkok','$132,100.00',345]] },
+  };
+
+  let expandedTables = new Set(['fact_sales']);
+  let activeTable = 'fact_sales';
+  let lastResultKey = 'monthly_revenue';
+
+  function renderTree() {
+    const tree = document.getElementById('tableTree');
+    tree.innerHTML = tables.map(t => `
+      <div>
+        <div class="tree-table ${t.name===activeTable?'active':''}" onclick="toggleTable('${t.name}')">
+          <svg viewBox="0 0 13 13" fill="none"><rect x="1" y="1" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1"/><path d="M1 4h11" stroke="currentColor" stroke-width="1"/></svg>
+          ${t.name}
+        </div>
+        ${expandedTables.has(t.name) ? t.fields.map(f => `
+          <div class="tree-field">
+            ${f.k==='pk'?'<span class="pk-badge">PK</span>':f.k==='fk'?'<span class="fk-badge">FK</span>':''}
+            <span>${f.n}</span>
+            <span style="margin-left:auto;font-size:10px;color:#bbb;">${f.t}</span>
+          </div>
+        `).join('') : ''}
+      </div>
+    `).join('');
+  }
+
+  function toggleTable(name) {
+    activeTable = name;
+    if (expandedTables.has(name)) expandedTables.delete(name);
+    else expandedTables.add(name);
+    renderTree();
+  }
+
+  function updateLineNums() {
+    const lines = document.getElementById('sqlEditor').value.split('\n').length;
+    document.getElementById('lineNums').innerHTML =
+      Array.from({length:Math.max(lines,10)},(_,i)=>`<div class="line-num">${i+1}</div>`).join('');
+  }
+
+  function handleTab(e) {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const ta = e.target, s = ta.selectionStart;
+      ta.value = ta.value.slice(0,s) + '  ' + ta.value.slice(ta.selectionEnd);
+      ta.selectionStart = ta.selectionEnd = s + 2;
+      updateLineNums();
+    }
+  }
+
+  function loadQuery(key) {
+    document.getElementById('sqlEditor').value = savedQueries[key];
+    updateLineNums();
+    runQueryWithKey(key);
+  }
+
+  function runQuery() {
+    const sql = document.getElementById('sqlEditor').value.trim().toLowerCase();
+    let key = 'monthly_revenue';
+    if (sql.includes('customer')) key = 'top_customers';
+    else if (sql.includes('product')) key = 'product_summary';
+    else if (sql.includes('region') || sql.includes('country') || sql.includes('city')) key = 'region_breakdown';
+    runQueryWithKey(key);
+  }
+
+  function runQueryWithKey(key) {
+    lastResultKey = key;
+    document.getElementById('statusDot').style.background = '#BA7517';
+    document.getElementById('statusText').textContent = 'Running...';
+    document.getElementById('queryTime').textContent = '';
+    const start = Date.now();
+    setTimeout(() => {
+      const r = mockResults[key];
+      const elapsed = ((Date.now() - start) / 1000).toFixed(2);
+      document.getElementById('queryTime').textContent = elapsed + 's';
+      document.getElementById('statusDot').style.background = '#3B6D11';
+      document.getElementById('statusText').textContent = 'Query completed';
+      document.getElementById('resultsInfo').innerHTML = `<span>${r.rows.length} rows</span> returned`;
+      document.getElementById('rowCount').textContent = r.rows.length + ' rows';
+      document.getElementById('resultsWrap').innerHTML = `
+        <table class="results-table">
+          <thead><tr>${r.cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
+          <tbody>${r.rows.map(row=>`<tr>${row.map(v=>`<td>${v===null?'<span class="null-val">NULL</span>':v}</td>`).join('')}</tr>`).join('')}</tbody>
+        </table>`;
+    }, 600);
+  }
+
+  function formatSQL() {
+    const keywords = ['SELECT','FROM','WHERE','JOIN','LEFT JOIN','INNER JOIN','ON','GROUP BY','ORDER BY','HAVING','LIMIT','AND','OR','AS','SUM','COUNT','AVG','MAX','MIN','DISTINCT','DESC','ASC','NOT NULL','PRIMARY KEY','REFERENCES'];
+    let sql = document.getElementById('sqlEditor').value;
+    keywords.forEach(k => { sql = sql.replace(new RegExp('\\b'+k+'\\b','gi'), k); });
+    document.getElementById('sqlEditor').value = sql;
+    updateLineNums();
+  }
+
+  function saveQuery() {
+    document.getElementById('statusText').textContent = 'Query saved';
+    setTimeout(() => document.getElementById('statusText').textContent = 'Ready', 2000);
+  }
+
+  function exportCSV() {
+    const r = mockResults[lastResultKey];
+    const rows = [r.cols, ...r.rows];
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = lastResultKey + '.csv';
+    a.click();
+  }
+
+  function switchTab(tab, btn) {
+    document.querySelectorAll('.rtab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    if (tab === 'explain') {
+      document.getElementById('resultsWrap').innerHTML = `
+        <div class="explain-box">
+          <div style="color:#1a1a1a;font-weight:600;margin-bottom:8px;">Query execution plan</div>
+          <div>→ Seq Scan on <span style="color:#97C459">fact_sales</span> (cost=0.00..4821.00 rows=1200 width=32)</div>
+          <div>&nbsp;&nbsp;→ Hash Join (cost=120.50..2340.00 rows=1200 width=48)</div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;→ Hash Cond: (f.date_id = d.date_id)</div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;→ Seq Scan on <span style="color:#97C459">dim_date</span> (cost=0.00..18.40 rows=840 width=16)</div>
+          <div style="margin-top:8px;color:#EF9F27">Estimated total cost: 4941.50</div>
+          <div style="color:#97C459">Actual execution time: 0.62s</div>
+        </div>`;
+    } else {
+      runQueryWithKey(lastResultKey);
+    }
+  }
+
+  const defaultSQL = `SELECT\n  d.year,\n  d.month,\n  SUM(f.revenue) AS total_revenue,\n  COUNT(f.sale_id) AS total_orders\nFROM fact_sales f\nJOIN dim_date d ON f.date_id = d.date_id\nGROUP BY d.year, d.month\nORDER BY d.year, d.month;`;
+  document.getElementById('sqlEditor').value = defaultSQL;
+  updateLineNums();
+  renderTree();
+  runQueryWithKey('monthly_revenue');
+
+  window.onload = function() {
+    if (user.firstName) {
+      const initials = user.firstName[0] + (user.lastName ? user.lastName[0] : '');
+      document.getElementById('userAvatar').textContent = initials.toUpperCase();
+      document.getElementById('userName').textContent = user.firstName + ' ' + user.lastName;
+      document.getElementById('userRole').textContent = user.role || 'Viewer';
+    }
+  }
+
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = 'dwms-login.html';
+    }
+
+</script>
+</body>
+</html>

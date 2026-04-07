@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DWMS — Data Sources</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; }
+    .app { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar { width: 200px; background: #0C447C; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; }
+    .sidebar-brand { display: flex; align-items: center; gap: 8px; padding: 1.25rem 1rem; border-bottom: 0.5px solid rgba(255,255,255,0.1); }
+    .brand-icon { width: 28px; height: 28px; background: #378ADD; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+    .brand-icon svg { width: 16px; height: 16px; }
+    .brand-name { font-size: 13px; font-weight: 600; color: #fff; }
+    .sidebar-nav { flex: 1; padding: 0.75rem 0; overflow-y: auto; }
+    .nav-section { font-size: 10px; color: #85B7EB; padding: 0.75rem 1rem 0.25rem; letter-spacing: 0.8px; text-transform: uppercase; }
+    .nav-item { display: flex; align-items: center; gap: 8px; padding: 0.5rem 1rem; font-size: 13px; color: #B5D4F4; cursor: pointer; text-decoration: none; transition: background 0.15s; }
+    .nav-item:hover { background: rgba(255,255,255,0.07); }
+    .nav-item.active { background: rgba(255,255,255,0.12); color: #fff; border-right: 2px solid #378ADD; }
+    .nav-item svg { width: 15px; height: 15px; opacity: 0.8; flex-shrink: 0; }
+    .sidebar-footer { padding: 1rem; border-top: 0.5px solid rgba(255,255,255,0.1); }
+    .avatar-row { display: flex; align-items: center; gap: 8px; }
+    .avatar { width: 28px; height: 28px; border-radius: 50%; background: #378ADD; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #fff; flex-shrink: 0; }
+    .avatar-name { font-size: 12px; color: #fff; font-weight: 600; }
+    .avatar-role { font-size: 10px; color: #85B7EB; }
+
+    /* ── Main ── */
+    .main { flex: 1; margin-left: 200px; display: flex; flex-direction: column; min-height: 100vh; }
+    .topbar { background: #fff; border-bottom: 0.5px solid #e0e0de; padding: 0.75rem 1.5rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+    .topbar-title { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+    .topbar-sub { font-size: 12px; color: #888; margin-top: 1px; }
+    .topbar-right { display: flex; gap: 8px; align-items: center; }
+
+    /* ── Buttons ── */
+    .btn-primary { font-size: 12px; padding: 6px 14px; border-radius: 8px; border: none; background: #185FA5; color: #fff; cursor: pointer; font-family: inherit; font-weight: 600; }
+    .btn-primary:hover { background: #0C447C; }
+    .btn-sm { font-size: 11px; padding: 4px 10px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; color: #1a1a1a; cursor: pointer; font-family: inherit; }
+    .btn-sm:hover { background: #f5f5f3; }
+    .btn-danger { font-size: 11px; padding: 4px 10px; border-radius: 8px; border: none; background: #A32D2D; color: #fff; cursor: pointer; font-family: inherit; }
+    .btn-danger:hover { background: #791F1F; }
+    .btn-success { font-size: 11px; padding: 4px 10px; border-radius: 8px; border: none; background: #3B6D11; color: #fff; cursor: pointer; font-family: inherit; }
+    .btn-success:hover { background: #27500A; }
+
+    /* ── Content ── */
+    .content { flex: 1; padding: 1.25rem 1.5rem; }
+
+    /* ── KPI Cards ── */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.25rem; }
+    .kpi-card { background: #fff; border: 0.5px solid #e0e0de; border-radius: 12px; padding: 1rem; }
+    .kpi-label { font-size: 11px; color: #888; margin-bottom: 4px; }
+    .kpi-value { font-size: 22px; font-weight: 600; color: #1a1a1a; }
+    .kpi-sub { font-size: 11px; color: #888; margin-top: 3px; }
+
+    /* ── Toolbar ── */
+    .toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; }
+    .search-wrap { position: relative; }
+    .search-wrap svg { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); width: 13px; height: 13px; color: #aaa; pointer-events: none; }
+    .search-input { height: 32px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; padding: 0 10px 0 32px; font-size: 12px; font-family: inherit; outline: none; width: 220px; transition: border-color 0.15s, box-shadow 0.15s; }
+    .search-input:focus { border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,0.12); }
+    .filter-select { height: 32px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; padding: 0 8px; font-size: 12px; font-family: inherit; outline: none; color: #1a1a1a; }
+    .view-toggle { display: flex; border: 0.5px solid #ccc; border-radius: 8px; overflow: hidden; }
+    .view-btn { width: 32px; height: 32px; border: none; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #888; }
+    .view-btn.active { background: #185FA5; color: #fff; }
+    .view-btn svg { width: 14px; height: 14px; }
+
+    /* ── Source Cards Grid ── */
+    .sources-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.25rem; }
+    .source-card { background: #fff; border: 0.5px solid #e0e0de; border-radius: 12px; padding: 1rem; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+    .source-card:hover { border-color: #aaa; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .source-card.selected { border: 1.5px solid #185FA5; }
+    .source-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 0.75rem; }
+    .source-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .source-card-actions { display: flex; gap: 5px; }
+    .source-name { font-size: 13px; font-weight: 600; color: #1a1a1a; margin-bottom: 3px; }
+    .source-type { font-size: 11px; color: #888; margin-bottom: 0.75rem; }
+    .source-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 0.75rem; }
+    .meta-box { background: #f5f5f3; border-radius: 6px; padding: 6px 8px; }
+    .meta-box-label { font-size: 10px; color: #888; }
+    .meta-box-value { font-size: 12px; font-weight: 600; color: #1a1a1a; margin-top: 1px; }
+    .source-footer { display: flex; align-items: center; justify-content: space-between; }
+    .last-sync { font-size: 11px; color: #888; }
+
+    /* ── Source List View ── */
+    .sources-list { display: none; flex-direction: column; gap: 6px; margin-bottom: 1.25rem; }
+    .source-list-item { background: #fff; border: 0.5px solid #e0e0de; border-radius: 10px; padding: 0.75rem 1rem; display: flex; align-items: center; gap: 12px; cursor: pointer; }
+    .source-list-item:hover { border-color: #aaa; }
+    .source-list-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+    .source-list-info { flex: 1; min-width: 0; }
+    .source-list-name { font-size: 13px; font-weight: 600; color: #1a1a1a; }
+    .source-list-meta { font-size: 11px; color: #888; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .source-list-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+
+    /* ── Pills ── */
+    .status-pill { font-size: 10px; padding: 2px 9px; border-radius: 20px; font-weight: 600; display: inline-block; }
+    .status-pill.connected    { background: #EAF3DE; color: #27500A; }
+    .status-pill.disconnected { background: #FCEBEB; color: #791F1F; }
+    .status-pill.syncing      { background: #E6F1FB; color: #0C447C; }
+    .status-pill.error        { background: #FCEBEB; color: #791F1F; }
+    .status-pill.paused       { background: #F1EFE8; color: #5F5E5A; }
+    .type-pill { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+    .type-pill.sql   { background: #E6F1FB; color: #0C447C; }
+    .type-pill.api   { background: #E1F5EE; color: #085041; }
+    .type-pill.file  { background: #FAEEDA; color: #633806; }
+    .type-pill.cloud { background: #F0EAF8; color: #4A1A7A; }
+    .type-pill.nosql { background: #FFF3E0; color: #E65100; }
+
+    /* ── Detail Panel ── */
+    .detail-layout { display: grid; grid-template-columns: 1fr 340px; gap: 10px; margin-bottom: 1.25rem; }
+    .detail-card { background: #fff; border: 0.5px solid #e0e0de; border-radius: 12px; padding: 1.25rem; }
+    .detail-section-title { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem; margin-top: 1.25rem; }
+    .detail-section-title:first-child { margin-top: 0; }
+    .detail-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 0.5px solid #e0e0de; font-size: 12px; }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-label { color: #888; }
+    .detail-value { color: #1a1a1a; font-weight: 500; font-family: 'Courier New', monospace; font-size: 11px; }
+    .conn-test-bar { display: flex; align-items: center; gap: 8px; margin-top: 1rem; padding: 10px; background: #f5f5f3; border-radius: 8px; }
+    .conn-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .conn-text { font-size: 12px; color: #1a1a1a; }
+    .activity-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 0.5px solid #e0e0de; }
+    .activity-item:last-child { border-bottom: none; }
+    .act-dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+    .act-text { font-size: 12px; color: #1a1a1a; }
+    .act-time { font-size: 11px; color: #888; margin-top: 1px; }
+    .sync-bar-wrap { height: 4px; background: #e0e0de; border-radius: 2px; margin: 6px 0; overflow: hidden; }
+    .sync-bar-fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
+
+    /* ── Modal ── */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: #fff; border-radius: 14px; padding: 1.5rem; width: 480px; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
+    .modal-title { font-size: 16px; font-weight: 600; color: #1a1a1a; margin-bottom: 0.25rem; }
+    .modal-sub { font-size: 12px; color: #888; margin-bottom: 1.25rem; }
+    .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1.25rem; }
+    .field { margin-bottom: 0.9rem; }
+    .field label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 5px; }
+    .field input, .field select, .field textarea { width: 100%; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; padding: 0 10px; font-size: 13px; color: #1a1a1a; font-family: inherit; outline: none; transition: border-color 0.15s, box-shadow 0.15s; height: 36px; }
+    .field textarea { height: 60px; padding: 8px 10px; resize: none; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,0.12); }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .row3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; }
+    .error-msg { display: none; font-size: 12px; color: #a32d2d; padding: 7px 10px; background: #fcebeb; border-radius: 8px; border: 0.5px solid #f09595; margin-top: 0.5rem; }
+    .success-inline { display: none; font-size: 12px; color: #3b6d11; padding: 7px 10px; background: #eaf3de; border-radius: 8px; border: 0.5px solid #97c459; margin-top: 0.5rem; }
+
+    /* ── Type Selector ── */
+    .type-selector { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 1rem; }
+    .type-opt { border: 0.5px solid #ccc; border-radius: 10px; padding: 0.6rem; text-align: center; cursor: pointer; transition: all 0.15s; }
+    .type-opt:hover { border-color: #aaa; background: #f5f5f3; }
+    .type-opt.active { border-color: #185FA5; background: #E6F1FB; }
+    .type-opt-icon { font-size: 20px; margin-bottom: 4px; }
+    .type-opt-label { font-size: 10px; font-weight: 600; color: #555; }
+    .type-opt.active .type-opt-label { color: #0C447C; }
+
+    /* ── Toast ── */
+    .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #1a1a1a; color: #fff; font-size: 12px; padding: 10px 16px; border-radius: 10px; z-index: 200; display: none; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    .toast.show { display: flex; }
+
+    /* ── Responsive ── */
+    @media (max-width: 1100px) { .detail-layout { grid-template-columns: 1fr; } }
+    @media (max-width: 900px) {
+      .sidebar { width: 60px; }
+      .brand-name, .nav-section, .avatar-role, .avatar-name { display: none; }
+      .main { margin-left: 60px; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .sources-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .sources-grid { grid-template-columns: 1fr; }
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+    <script>
+      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (!token) {
+        window.location.href = 'dwms-login.html';
+      }
+    </script>
+<div class="app">
+
+  <!-- ── Sidebar ── -->
+  <div class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 16 16" fill="none">
+          <rect x="1" y="1" width="6" height="6" rx="1" fill="white" opacity="0.9"/>
+          <rect x="9" y="1" width="6" height="6" rx="1" fill="white" opacity="0.6"/>
+          <rect x="1" y="9" width="6" height="6" rx="1" fill="white" opacity="0.6"/>
+          <rect x="9" y="9" width="6" height="6" rx="1" fill="white" opacity="0.35"/>
+        </svg>
+      </div>
+      <span class="brand-name">DWMS</span>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-section">Main</div>
+      <a href="dwms-dashboard.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" fill="currentColor"/><rect x="9" y="1" width="6" height="6" rx="1" fill="currentColor" opacity="0.5"/><rect x="1" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.5"/><rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.3"/></svg>
+        Dashboard
+      </a>
+      <a href="#" class="nav-item active">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Data sources
+      </a>
+      <a href="dwms-etl-pipelines.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M8 2v4l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/></svg>
+        ETL pipelines
+      </a>
+      <a href="dwms-schema-manager.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="12" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
+        Schema manager
+      </a>
+      <a href="dwms-query-editor.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M5 7h6M5 10h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Query editor
+      </a>
+      <div class="nav-section">Admin</div>
+      <a href="dwms-user-management.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M2 14c0-3 2.7-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Users
+      </a>
+      <a href="dwms-setting.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 2v1.5M8 12.5V14M2 8h1.5M12.5 8H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Settings
+      </a>
+    </div>
+    <div class="sidebar-footer">
+      <div class="avatar-row">
+        <div class="avatar" id="userAvatar">AD</div>
+        <div class="avatar-info">
+          <div class="avatar-name" id="userName">Admin</div>
+          <div class="avatar-role" id="userRole">Administrator</div>
+        </div>
+      </div>
+      <div style="margin-top:8px;">
+        <button onclick="logout()" style="width:100%;font-size:11px;padding:5px;border-radius:6px;border:0.5px solid rgba(255,255,255,0.2);background:transparent;color:#B5D4F4;cursor:pointer;">
+          Sign out
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Main ── -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">Data sources</div>
+        <div class="topbar-sub">Connect and manage your data connections</div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-sm" onclick="syncAll()">↻ Sync all</button>
+        <button class="btn-primary" onclick="openAddSource()">+ Add source</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- KPI Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Total sources</div>
+          <div class="kpi-value" id="kpiTotal">0</div>
+          <div class="kpi-sub">connected data sources</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Connected</div>
+          <div class="kpi-value" style="color:#3B6D11;" id="kpiConnected">0</div>
+          <div class="kpi-sub">healthy connections</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Total records</div>
+          <div class="kpi-value" id="kpiRecords">0</div>
+          <div class="kpi-sub">across all sources</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Errors</div>
+          <div class="kpi-value" style="color:#A32D2D;" id="kpiErrors">0</div>
+          <div class="kpi-sub">need attention</div>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="search-wrap">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="6.5" cy="6.5" r="4.5"/><path d="M10 10l3 3" stroke-linecap="round"/>
+          </svg>
+          <input class="search-input" type="text" placeholder="Search sources..."
+            id="searchInput" oninput="applyFilters()" />
+        </div>
+        <select class="filter-select" id="filterType" onchange="applyFilters()">
+          <option value="">All types</option>
+          <option value="sql">SQL Database</option>
+          <option value="api">REST API</option>
+          <option value="file">File / CSV</option>
+          <option value="cloud">Cloud Storage</option>
+          <option value="nosql">NoSQL</option>
+        </select>
+        <select class="filter-select" id="filterStatus" onchange="applyFilters()">
+          <option value="">All status</option>
+          <option value="connected">Connected</option>
+          <option value="syncing">Syncing</option>
+          <option value="error">Error</option>
+          <option value="paused">Paused</option>
+          <option value="disconnected">Disconnected</option>
+        </select>
+        <div class="view-toggle">
+          <button class="view-btn active" id="gridViewBtn" onclick="setView('grid')" title="Grid view">
+            <svg viewBox="0 0 16 16" fill="none">
+              <rect x="1" y="1" width="6" height="6" rx="1" fill="currentColor"/>
+              <rect x="9" y="1" width="6" height="6" rx="1" fill="currentColor"/>
+              <rect x="1" y="9" width="6" height="6" rx="1" fill="currentColor"/>
+              <rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor"/>
+            </svg>
+          </button>
+          <button class="view-btn" id="listViewBtn" onclick="setView('list')" title="List view">
+            <svg viewBox="0 0 16 16" fill="none">
+              <path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <span style="margin-left:auto;font-size:11px;color:#888;" id="resultCount"></span>
+      </div>
+
+      <!-- Grid View -->
+      <div class="sources-grid" id="sourcesGrid"></div>
+
+      <!-- List View -->
+      <div class="sources-list" id="sourcesList"></div>
+
+      <!-- Detail Panel -->
+      <div class="detail-layout" id="detailLayout" style="display:none;">
+        <div class="detail-card" id="detailCard"></div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div class="detail-card" id="activityCard"></div>
+          <div class="detail-card" id="syncCard"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Add / Edit Source Modal ── -->
+  <div class="modal-overlay" id="sourceModal">
+    <div class="modal">
+      <div class="modal-title" id="modalTitle">Add data source</div>
+      <div class="modal-sub" id="modalSub">Connect a new data source to your warehouse</div>
+
+      <div id="typeSelectorWrap">
+        <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:8px;">Source type</div>
+        <div class="type-selector">
+          <div class="type-opt active" id="typeSQL" onclick="selectType(this,'sql')">
+            <div class="type-opt-icon">🗄️</div>
+            <div class="type-opt-label">SQL DB</div>
+          </div>
+          <div class="type-opt" id="typeAPI" onclick="selectType(this,'api')">
+            <div class="type-opt-icon">🔌</div>
+            <div class="type-opt-label">REST API</div>
+          </div>
+          <div class="type-opt" id="typeFile" onclick="selectType(this,'file')">
+            <div class="type-opt-icon">📄</div>
+            <div class="type-opt-label">File/CSV</div>
+          </div>
+          <div class="type-opt" id="typeCloud" onclick="selectType(this,'cloud')">
+            <div class="type-opt-icon">☁️</div>
+            <div class="type-opt-label">Cloud</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Source name</label>
+        <input type="text" id="mName" placeholder="e.g. Production PostgreSQL" />
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <textarea id="mDesc" placeholder="Optional description..."></textarea>
+      </div>
+
+      <!-- SQL Fields -->
+      <div id="sqlFields">
+        <div class="row3">
+          <div class="field">
+            <label>Host</label>
+            <input type="text" id="mHost" placeholder="db.example.com" />
+          </div>
+          <div class="field">
+            <label>Port</label>
+            <input type="text" id="mPort" placeholder="5432" />
+          </div>
+          <div class="field">
+            <label>Database</label>
+            <input type="text" id="mDatabase" placeholder="mydb" />
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>Username</label>
+            <input type="text" id="mUser" placeholder="db_user" />
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <input type="password" id="mPass" placeholder="••••••••" />
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>Engine</label>
+            <select id="mEngine">
+              <option>PostgreSQL</option>
+              <option>MySQL</option>
+              <option>SQL Server</option>
+              <option>Oracle</option>
+              <option>SQLite</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>SSL mode</label>
+            <select id="mSSL">
+              <option>Required</option>
+              <option>Preferred</option>
+              <option>Disabled</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- API Fields -->
+      <div id="apiFields" style="display:none;">
+        <div class="field">
+          <label>Base URL</label>
+          <input type="text" id="mURL" placeholder="https://api.example.com/v1" />
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>Auth type</label>
+            <select id="mAuth">
+              <option>API Key</option>
+              <option>Bearer Token</option>
+              <option>OAuth 2.0</option>
+              <option>Basic Auth</option>
+              <option>None</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>API Key / Token</label>
+            <input type="password" id="mToken" placeholder="••••••••" />
+          </div>
+        </div>
+      </div>
+
+      <!-- File Fields -->
+      <div id="fileFields" style="display:none;">
+        <div class="row2">
+          <div class="field">
+            <label>File format</label>
+            <select id="mFormat">
+              <option>CSV</option>
+              <option>JSON</option>
+              <option>Parquet</option>
+              <option>Excel (.xlsx)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Delimiter</label>
+            <select id="mDelimiter">
+              <option>Comma (,)</option>
+              <option>Semicolon (;)</option>
+              <option>Tab (\t)</option>
+              <option>Pipe (|)</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>File path / URL</label>
+          <input type="text" id="mFilePath" placeholder="/data/files/ or https://..." />
+        </div>
+      </div>
+
+      <!-- Cloud Fields -->
+      <div id="cloudFields" style="display:none;">
+        <div class="row2">
+          <div class="field">
+            <label>Cloud provider</label>
+            <select id="mCloud">
+              <option>AWS S3</option>
+              <option>Google Cloud Storage</option>
+              <option>Azure Blob Storage</option>
+              <option>BigQuery</option>
+              <option>Snowflake</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Region</label>
+            <input type="text" id="mRegion" placeholder="us-east-1" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Bucket / Dataset name</label>
+          <input type="text" id="mBucket" placeholder="my-bucket-name" />
+        </div>
+        <div class="field">
+          <label>Access Key / Service Account JSON</label>
+          <input type="password" id="mAccessKey" placeholder="••••••••" />
+        </div>
+      </div>
+
+      <div class="row2" style="margin-top:0.5rem;">
+        <div class="field">
+          <label>Sync schedule</label>
+          <select id="mSchedule">
+            <option>Every 15 min</option>
+            <option>Every 30 min</option>
+            <option>Every 1 hour</option>
+            <option>Every 6 hours</option>
+            <option>Daily</option>
+            <option>Manual</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Environment</label>
+          <select id="mEnv">
+            <option>Production</option>
+            <option>Staging</option>
+            <option>Development</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="error-msg"    id="modalError"></div>
+      <div class="success-inline" id="modalSuccess"></div>
+
+      <div class="modal-footer">
+        <button class="btn-sm" onclick="testConnection()" id="testBtn">
+          Test connection
+        </button>
+        <button class="btn-sm" onclick="closeModal()">Cancel</button>
+        <button class="btn-primary" id="modalSubmitBtn" onclick="submitSource()">
+          Add source
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Toast ── -->
+  <div class="toast" id="toast">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <circle cx="7" cy="7" r="6" fill="#3B6D11"/>
+      <path d="M4 7l2 2 4-4" stroke="white" stroke-width="1.5"
+        stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span id="toastMsg"></span>
+  </div>
+
+</div><!-- end .app -->
+
+<script>
+  /* ─────────────────────────────────────────────
+     DATA
+  ───────────────────────────────────────────── */
+  const typeIcons = {
+    sql:'🗄️', api:'🔌', file:'📄', cloud:'☁️', nosql:'🍃'
+  };
+  const typeBg = {
+    sql:'#E6F1FB', api:'#E1F5EE', file:'#FAEEDA',
+    cloud:'#F0EAF8', nosql:'#FFF3E0'
+  };
+  const typeLabels = {
+    sql:'SQL Database', api:'REST API', file:'File / CSV',
+    cloud:'Cloud Storage', nosql:'NoSQL'
+  };
+
+  let sources = [
+    {
+      id:1, name:'PostgreSQL Prod', type:'sql', engine:'PostgreSQL',
+      host:'db-prod.company.com', port:'5432', database:'warehouse_prod',
+      status:'connected', records:'2.4M', lastSync:'2 min ago',
+      schedule:'Every 30 min', env:'Production', size:'1.2TB',
+      tables:48, queries:1240,
+      desc:'Main production PostgreSQL database'
+    },
+    {
+      id:2, name:'MySQL Analytics', type:'sql', engine:'MySQL',
+      host:'mysql.analytics.co', port:'3306', database:'analytics_db',
+      status:'connected', records:'860K', lastSync:'15 min ago',
+      schedule:'Every 1 hour', env:'Production', size:'340GB',
+      tables:22, queries:580,
+      desc:'Analytics MySQL instance'
+    },
+    {
+      id:3, name:'CRM REST API', type:'api', engine:'REST API',
+      host:'api.crm.company.com', port:'443', database:'—',
+      status:'syncing', records:'340K', lastSync:'Syncing...',
+      schedule:'Every 1 hour', env:'Production', size:'42GB',
+      tables:12, queries:210,
+      desc:'CRM system REST API integration'
+    },
+    {
+      id:4, name:'Sales CSV Upload', type:'file', engine:'CSV',
+      host:'File system', port:'—', database:'—',
+      status:'connected', records:'88K', lastSync:'1 hour ago',
+      schedule:'Manual', env:'Staging', size:'8GB',
+      tables:3, queries:44,
+      desc:'Monthly sales CSV file uploads'
+    },
+    {
+      id:5, name:'AWS S3 Data Lake', type:'cloud', engine:'AWS S3',
+      host:'s3.amazonaws.com', port:'443', database:'dwms-lake',
+      status:'connected', records:'8.2M', lastSync:'5 min ago',
+      schedule:'Every 15 min', env:'Production', size:'2.4TB',
+      tables:84, queries:3200,
+      desc:'Main S3 data lake bucket'
+    },
+    {
+      id:6, name:'Logs S3 Bucket', type:'cloud', engine:'AWS S3',
+      host:'s3.amazonaws.com', port:'443', database:'dwms-logs',
+      status:'error', records:'560K', lastSync:'18 min ago',
+      schedule:'Every 1 hour', env:'Production', size:'180GB',
+      tables:6, queries:88,
+      desc:'Application logs S3 bucket — connection timeout'
+    },
+    {
+      id:7, name:'MongoDB Atlas', type:'nosql', engine:'MongoDB',
+      host:'cluster0.mongodb.net', port:'27017', database:'events_db',
+      status:'connected', records:'1.2M', lastSync:'10 min ago',
+      schedule:'Every 30 min', env:'Production', size:'220GB',
+      tables:18, queries:420,
+      desc:'Event tracking MongoDB cluster'
+    },
+    {
+      id:8, name:'BigQuery Analytics', type:'cloud', engine:'BigQuery',
+      host:'bigquery.googleapis.com', port:'443', database:'analytics_bq',
+      status:'connected', records:'4.8M', lastSync:'3 min ago',
+      schedule:'Every 6 hours', env:'Production', size:'1.8TB',
+      tables:36, queries:890,
+      desc:'Google BigQuery analytics dataset'
+    },
+    {
+      id:9, name:'Staging PostgreSQL', type:'sql', engine:'PostgreSQL',
+      host:'db-staging.company.com', port:'5432', database:'warehouse_dev',
+      status:'paused', records:'120K', lastSync:'2 days ago',
+      schedule:'Manual', env:'Staging', size:'28GB',
+      tables:48, queries:124,
+      desc:'Staging environment database'
+    },
+  ];
+
+  let filteredSources  = [...sources];
+  let currentView      = 'grid';
+  let selectedSourceId = null;
+  let selectedType     = 'sql';
+  let editingId        = null;
+
+  /* ─────────────────────────────────────────────
+     INIT
+  ───────────────────────────────────────────── */
+  function init() {
+    updateKPIs();
+    applyFilters();
+  }
+
+  /* ─────────────────────────────────────────────
+     KPIs
+  ───────────────────────────────────────────── */
+  function updateKPIs() {
+    document.getElementById('kpiTotal').textContent =
+      sources.length;
+    document.getElementById('kpiConnected').textContent =
+      sources.filter(s => s.status === 'connected').length;
+    document.getElementById('kpiErrors').textContent =
+      sources.filter(s => s.status === 'error').length;
+
+    const totalRaw = sources.reduce((sum, s) => {
+      const v = parseFloat(s.records.replace(/[^0-9.]/g,''));
+      const m = s.records.includes('M') ? 1e6
+              : s.records.includes('K') ? 1e3 : 1;
+      return sum + v * m;
+    }, 0);
+    document.getElementById('kpiRecords').textContent =
+      totalRaw >= 1e6
+        ? (totalRaw / 1e6).toFixed(1) + 'M'
+        : Math.round(totalRaw / 1e3) + 'K';
+  }
+
+  /* ─────────────────────────────────────────────
+     FILTER
+  ───────────────────────────────────────────── */
+  function applyFilters() {
+    const q      = document.getElementById('searchInput').value.toLowerCase();
+    const type   = document.getElementById('filterType').value;
+    const status = document.getElementById('filterStatus').value;
+
+    filteredSources = sources.filter(s => {
+      const matchQ =
+        !q ||
+        s.name.toLowerCase().includes(q)   ||
+        s.engine.toLowerCase().includes(q) ||
+        s.host.toLowerCase().includes(q)   ||
+        s.desc.toLowerCase().includes(q);
+      const matchType   = !type   || s.type   === type;
+      const matchStatus = !status || s.status === status;
+      return matchQ && matchType && matchStatus;
+    });
+
+    document.getElementById('resultCount').textContent =
+      filteredSources.length === sources.length
+        ? `${sources.length} sources`
+        : `${filteredSources.length} of ${sources.length} sources`;
+
+    renderView();
+  }
+
+  /* ─────────────────────────────────────────────
+     VIEW TOGGLE
+  ───────────────────────────────────────────── */
+  function setView(v) {
+    currentView = v;
+    document.getElementById('gridViewBtn')
+      .classList.toggle('active', v === 'grid');
+    document.getElementById('listViewBtn')
+      .classList.toggle('active', v === 'list');
+    renderView();
+  }
+
+  function renderView() {
+    const grid = document.getElementById('sourcesGrid');
+    const list = document.getElementById('sourcesList');
+    if (currentView === 'grid') {
+      grid.style.display = 'grid';
+      list.style.display = 'none';
+      renderGrid();
+    } else {
+      grid.style.display = 'none';
+      list.style.display = 'flex';
+      renderList();
+    }
+  }
+
+  /* ─────────────────────────────────────────────
+     GRID RENDER
+  ───────────────────────────────────────────── */
+  function renderGrid() {
+    const grid = document.getElementById('sourcesGrid');
+    if (!filteredSources.length) {
+      grid.innerHTML = `
+        <div style="grid-column:1/-1;text-align:center;
+          padding:3rem;color:#aaa;font-size:13px;">
+          No data sources match your filters.
+        </div>`;
+      return;
+    }
+    grid.innerHTML = filteredSources.map(s => `
+      <div class="source-card ${selectedSourceId===s.id?'selected':''}"
+           onclick="selectSource(${s.id})">
+        <div class="source-card-top">
+          <div class="source-icon"
+            style="background:${typeBg[s.type]};">${typeIcons[s.type]}</div>
+          <div class="source-card-actions">
+            <button class="btn-sm"
+              onclick="event.stopPropagation();syncSource(${s.id})">↻</button>
+            <button class="btn-sm"
+              onclick="event.stopPropagation();openEditSource(${s.id})">Edit</button>
+            <button class="btn-danger"
+              onclick="event.stopPropagation();deleteSource(${s.id})">✕</button>
+          </div>
+        </div>
+        <div class="source-name">${s.name}</div>
+        <div class="source-type">
+          <span class="type-pill ${s.type}">${typeLabels[s.type]}</span>
+          &nbsp;${s.engine}
+        </div>
+        <div class="source-meta">
+          <div class="meta-box">
+            <div class="meta-box-label">Records</div>
+            <div class="meta-box-value">${s.records}</div>
+          </div>
+          <div class="meta-box">
+            <div class="meta-box-label">Size</div>
+            <div class="meta-box-value">${s.size}</div>
+          </div>
+          <div class="meta-box">
+            <div class="meta-box-label">Tables</div>
+            <div class="meta-box-value">${s.tables}</div>
+          </div>
+          <div class="meta-box">
+            <div class="meta-box-label">Queries</div>
+            <div class="meta-box-value">${s.queries}</div>
+          </div>
+        </div>
+        <div class="source-footer">
+          <span class="last-sync">↻ ${s.lastSync}</span>
+          <span class="status-pill ${s.status}">${capitalize(s.status)}</span>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  /* ─────────────────────────────────────────────
+     LIST RENDER
+  ───────────────────────────────────────────── */
+  function renderList() {
+    const list = document.getElementById('sourcesList');
+    if (!filteredSources.length) {
+      list.innerHTML = `
+        <div style="text-align:center;padding:3rem;color:#aaa;font-size:13px;">
+          No data sources match your filters.
+        </div>`;
+      return;
+    }
+    list.innerHTML = filteredSources.map(s => `
+      <div class="source-list-item" onclick="selectSource(${s.id})">
+        <div class="source-list-icon"
+          style="background:${typeBg[s.type]};">${typeIcons[s.type]}</div>
+        <div class="source-list-info">
+          <div class="source-list-name">${s.name}</div>
+          <div class="source-list-meta">
+            ${s.engine} &middot; ${s.host} &middot;
+            ${s.records} records &middot; Last sync: ${s.lastSync}
+          </div>
+        </div>
+        <span class="type-pill ${s.type}">${typeLabels[s.type]}</span>
+        <span class="status-pill ${s.status}">${capitalize(s.status)}</span>
+        <div class="source-list-actions">
+          <button class="btn-sm"
+            onclick="event.stopPropagation();syncSource(${s.id})">↻ Sync</button>
+          <button class="btn-sm"
+            onclick="event.stopPropagation();openEditSource(${s.id})">Edit</button>
+          <button class="btn-danger"
+            onclick="event.stopPropagation();deleteSource(${s.id})">Remove</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  /* ─────────────────────────────────────────────
+     SELECT SOURCE → DETAIL PANEL
+  ───────────────────────────────────────────── */
+  function selectSource(id) {
+    selectedSourceId = selectedSourceId === id ? null : id;
+    renderView();
+
+    const panel = document.getElementById('detailLayout');
+    if (!selectedSourceId) { panel.style.display = 'none'; return; }
+
+    const s = sources.find(x => x.id === id);
+    panel.style.display = 'grid';
+
+    /* -- Main detail card -- */
+    const connColor =
+      s.status === 'connected' ? '#3B6D11' :
+      s.status === 'error'     ? '#A32D2D' :
+      s.status === 'syncing'   ? '#185FA5' : '#888780';
+
+    const connMsg =
+      s.status === 'connected'  ? 'Connection healthy — responding normally' :
+      s.status === 'error'      ? 'Connection failed — check credentials and host' :
+      s.status === 'syncing'    ? 'Sync in progress...' :
+      s.status === 'paused'     ? 'Connection paused' : 'Disconnected';
+
+    document.getElementById('detailCard').innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:1.25rem;">
+        <div style="width:48px;height:48px;border-radius:12px;
+          background:${typeBg[s.type]};display:flex;align-items:center;
+          justify-content:center;font-size:24px;flex-shrink:0;">
+          ${typeIcons[s.type]}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:15px;font-weight:600;color:#1a1a1a;">
+            ${s.name}
+          </div>
+          <div style="font-size:12px;color:#888;margin-top:2px;">
+            ${s.desc}
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          <button class="btn-sm" onclick="syncSource(${s.id})">↻ Sync</button>
+          <button class="btn-sm" onclick="openEditSource(${s.id})">Edit</button>
+          <button class="btn-danger" onclick="deleteSource(${s.id})">Remove</button>
+        </div>
+      </div>
+
+      <div class="detail-section-title">Connection details</div>
+      <div class="detail-row">
+        <span class="detail-label">Host</span>
+        <span class="detail-value">${s.host}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Port</span>
+        <span class="detail-value">${s.port}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Database</span>
+        <span class="detail-value">${s.database}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Engine</span>
+        <span class="detail-value">${s.engine}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Environment</span>
+        <span class="detail-value">${s.env}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Schedule</span>
+        <span class="detail-value">${s.schedule}</span>
+      </div>
+
+      <div class="detail-section-title">Statistics</div>
+      <div class="detail-row">
+        <span class="detail-label">Total records</span>
+        <span class="detail-value">${s.records}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Storage size</span>
+        <span class="detail-value">${s.size}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Tables / endpoints</span>
+        <span class="detail-value">${s.tables}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Total queries run</span>
+        <span class="detail-value">${s.queries}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Last sync</span>
+        <span class="detail-value">${s.lastSync}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Status</span>
+        <span class="status-pill ${s.status}">${capitalize(s.status)}</span>
+      </div>
+
+      <div class="conn-test-bar">
+        <div class="conn-dot" style="background:${connColor};"></div>
+        <span class="conn-text">${connMsg}</span>
+      </div>
+    `;
+
+    /* -- Activity card -- */
+    const activities = [
+      { dot:'#3B6D11', text:`${s.name} sync completed`,       time:'Just now'    },
+      { dot:'#185FA5', text:'Schema refresh triggered',        time:'1 hour ago'  },
+      { dot:'#3B6D11', text:`${s.records} records loaded`,     time:'2 hours ago' },
+      { dot:'#BA7517', text:'Latency spike detected (1.8s)',    time:'5 hours ago' },
+      { dot:'#3B6D11', text:'Connection re-established',        time:'Yesterday'   },
+    ];
+    document.getElementById('activityCard').innerHTML = `
+      <div style="font-size:13px;font-weight:600;
+        color:#1a1a1a;margin-bottom:0.75rem;">Recent activity</div>
+      ${activities.map(a => `
+        <div class="activity-item">
+          <div class="act-dot" style="background:${a.dot};"></div>
+          <div>
+            <div class="act-text">${a.text}</div>
+            <div class="act-time">${a.time}</div>
+          </div>
+        </div>`).join('')}
+    `;
+
+    /* -- Sync card -- */
+    const pct =
+      s.status === 'syncing'   ? 55  :
+      s.status === 'connected' ? 100 :
+      s.status === 'error'     ? 28  : 0;
+
+    const barColor =
+      s.status === 'error'   ? '#A32D2D' :
+      s.status === 'syncing' ? '#185FA5' : '#3B6D11';
+
+    const syncLabel =
+      s.status === 'syncing'   ? 'Syncing in progress...' :
+      s.status === 'error'     ? 'Last sync failed at 28%' :
+      s.status === 'paused'    ? 'Sync paused' :
+      s.status === 'connected' ? 'Last sync completed' : 'Not synced';
+
+    document.getElementById('syncCard').innerHTML = `
+      <div style="font-size:13px;font-weight:600;
+        color:#1a1a1a;margin-bottom:0.75rem;">Sync status</div>
+      <div style="display:flex;justify-content:space-between;
+        font-size:11px;color:#888;margin-bottom:4px;">
+        <span>${syncLabel}</span>
+        <span>${pct}%</span>
+      </div>
+      <div class="sync-bar-wrap">
+        <div class="sync-bar-fill"
+          style="width:${pct}%;background:${barColor};"></div>
+      </div>
+      <div style="font-size:11px;color:#888;margin-bottom:1rem;">
+        Schedule: ${s.schedule}
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button class="btn-success" style="flex:1;"
+          onclick="syncSource(${s.id})">↻ Sync now</button>
+        <button class="btn-sm" style="flex:1;"
+          onclick="togglePause(${s.id})">
+          ${s.status === 'paused' ? '▶ Resume' : '⏸ Pause'}
+        </button>
+      </div>
+    `;
+
+    panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }
+
+  /* ─────────────────────────────────────────────
+     SYNC
+  ───────────────────────────────────────────── */
+  function syncSource(id) {
+    const s = sources.find(x => x.id === id);
+    if (s.status === 'paused') {
+      showToast(`${s.name} is paused. Resume it first.`); return;
+    }
+    s.status   = 'syncing';
+    s.lastSync = 'Syncing...';
+    renderView();
+    if (selectedSourceId === id) selectSource(id);
+    showToast(`Syncing ${s.name}...`);
+
+    setTimeout(() => {
+      s.status   = 'connected';
+      s.lastSync = 'Just now';
+      renderView();
+      updateKPIs();
+      if (selectedSourceId === id) selectSource(id);
+      showToast(`${s.name} synced successfully`);
+    }, 2500);
+  }
+
+  function syncAll() {
+    let count = 0;
+    sources.forEach(s => {
+      if (s.status !== 'paused') {
+        s.status = 'syncing'; s.lastSync = 'Syncing...'; count++;
+      }
+    });
+    renderView(); updateKPIs();
+    showToast(`Syncing ${count} source(s)...`);
+
+    setTimeout(() => {
+      sources.forEach(s => {
+        if (s.status === 'syncing') {
+          s.status = 'connected'; s.lastSync = 'Just now';
+        }
+      });
+      renderView(); updateKPIs();
+      if (selectedSourceId) selectSource(selectedSourceId);
+      showToast('All sources synced successfully');
+    }, 3000);
+  }
+
+  function togglePause(id) {
+    const s = sources.find(x => x.id === id);
+    s.status   = s.status === 'paused' ? 'connected' : 'paused';
+    s.lastSync = s.status === 'paused' ? 'Paused' : 'Just now';
+    renderView(); updateKPIs();
+    if (selectedSourceId === id) selectSource(id);
+    showToast(`${s.name} ${s.status === 'paused' ? 'paused' : 'resumed'}`);
+  }
+
+  /* ─────────────────────────────────────────────
+     DELETE
+  ───────────────────────────────────────────── */
+  function deleteSource(id) {
+    const s = sources.find(x => x.id === id);
+    if (!confirm(`Remove "${s.name}"? This cannot be undone.`)) return;
+    sources         = sources.filter(x => x.id !== id);
+    filteredSources = filteredSources.filter(x => x.id !== id);
+    if (selectedSourceId === id) {
+      selectedSourceId = null;
+      document.getElementById('detailLayout').style.display = 'none';
+    }
+    renderView();
+    updateKPIs();
+    showToast(`${s.name} removed`);
+  }
+
+  /* ─────────────────────────────────────────────
+     MODAL — ADD / EDIT
+  ───────────────────────────────────────────── */
+  function openAddSource() {
+    editingId = null;
+    selectedType = 'sql';
+    document.getElementById('modalTitle').textContent     = 'Add data source';
+    document.getElementById('modalSub').textContent       = 'Connect a new data source to your warehouse';
+    document.getElementById('modalSubmitBtn').textContent = 'Add source';
+    document.getElementById('typeSelectorWrap').style.display = 'block';
+    clearModalFields();
+    showTypeFields('sql');
+    document.querySelectorAll('.type-opt').forEach(o => o.classList.remove('active'));
+    document.getElementById('typeSQL').classList.add('active');
+    document.getElementById('modalError').style.display   = 'none';
+    document.getElementById('modalSuccess').style.display = 'none';
+    document.getElementById('sourceModal').classList.add('open');
+  }
+
+  function openEditSource(id) {
+    const s = sources.find(x => x.id === id);
+    editingId    = id;
+    selectedType = s.type;
+    document.getElementById('modalTitle').textContent     = `Edit — ${s.name}`;
+    document.getElementById('modalSub').textContent       = 'Update the connection details';
+    document.getElementById('modalSubmitBtn').textContent = 'Save changes';
+    document.getElementById('typeSelectorWrap').style.display = 'none';
+    clearModalFields();
+    showTypeFields(s.type);
+    document.getElementById('mName').value     = s.name;
+    document.getElementById('mDesc').value     = s.desc;
+    document.getElementById('mSchedule').value = s.schedule;
+    document.getElementById('mEnv').value      = s.env;
+    if (s.type === 'sql') {
+      document.getElementById('mHost').value     = s.host;
+      document.getElementById('mPort').value     = s.port;
+      document.getElementById('mDatabase').value = s.database;
+      document.getElementById('mEngine').value   = s.engine;
+    } else if (s.type === 'api') {
+      document.getElementById('mURL').value = s.host;
+    } else if (s.type === 'cloud') {
+      document.getElementById('mBucket').value = s.database;
+      document.getElementById('mCloud').value  = s.engine;
+    }
+    document.getElementById('modalError').style.display   = 'none';
+    document.getElementById('modalSuccess').style.display = 'none';
+    document.getElementById('sourceModal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('sourceModal').classList.remove('open');
+    editingId = null;
+  }
+
+  function clearModalFields() {
+    ['mName','mDesc','mHost','mPort','mDatabase','mUser','mPass',
+     'mURL','mToken','mFilePath','mBucket','mAccessKey','mRegion']
+      .forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+  }
+
+  function selectType(el, type) {
+    selectedType = type;
+    document.querySelectorAll('.type-opt').forEach(o => o.classList.remove('active'));
+    el.classList.add('active');
+    showTypeFields(type);
+  }
+
+  function showTypeFields(type) {
+    document.getElementById('sqlFields').style.display   = type === 'sql'   ? 'block' : 'none';
+    document.getElementById('apiFields').style.display   = type === 'api'   ? 'block' : 'none';
+    document.getElementById('fileFields').style.display  = type === 'file'  ? 'block' : 'none';
+    document.getElementById('cloudFields').style.display = type === 'cloud' ? 'block' : 'none';
+  }
+
+  function testConnection() {
+    const btn = document.getElementById('testBtn');
+    const err = document.getElementById('modalError');
+    const suc = document.getElementById('modalSuccess');
+    err.style.display = 'none';
+    suc.style.display = 'none';
+    btn.textContent   = 'Testing...';
+    btn.disabled      = true;
+    setTimeout(() => {
+      btn.textContent = 'Test connection';
+      btn.disabled    = false;
+      suc.textContent = 'Connection successful! Database is reachable.';
+      suc.style.display = 'block';
+    }, 1500);
+  }
+
+  function submitSource() {
+    const err = document.getElementById('modalError');
+    const suc = document.getElementById('modalSuccess');
+    err.style.display = 'none';
+    suc.style.display = 'none';
+
+    const name = document.getElementById('mName').value.trim();
+    if (!name) {
+      err.textContent   = 'Source name is required.';
+      err.style.display = 'block';
+      return;
+    }
+
+    if (editingId) {
+      const s      = sources.find(x => x.id === editingId);
+      s.name       = name;
+      s.desc       = document.getElementById('mDesc').value.trim();
+      s.schedule   = document.getElementById('mSchedule').value;
+      s.env        = document.getElementById('mEnv').value;
+      if (s.type === 'sql') {
+        s.host     = document.getElementById('mHost').value.trim() || s.host;
+        s.port     = document.getElementById('mPort').value.trim() || s.port;
+        s.database = document.getElementById('mDatabase').value.trim() || s.database;
+        s.engine   = document.getElementById('mEngine').value;
+      }
+      showToast(`${s.name} updated successfully`);
+    } else {
+      const newSource = {
+        id:       sources.length + 1,
+        name,
+        type:     selectedType,
+        engine:   selectedType === 'sql'
+                    ? document.getElementById('mEngine').value
+                    : selectedType === 'cloud'
+                    ? document.getElementById('mCloud').value
+                    : selectedType.toUpperCase(),
+        host:     selectedType === 'sql'
+                    ? document.getElementById('mHost').value.trim()
+                    : selectedType === 'api'
+                    ? document.getElementById('mURL').value.trim()
+                    : selectedType === 'cloud'
+                    ? 'cloud.provider.com'
+                    : 'File system',
+        port:     selectedType === 'sql'
+                    ? document.getElementById('mPort').value.trim() || '5432'
+                    : '—',
+        database: selectedType === 'sql'
+                    ? document.getElementById('mDatabase').value.trim()
+                    : selectedType === 'cloud'
+                    ? document.getElementById('mBucket').value.trim()
+                    : '—',
+        status:   'connected',
+        records:  '0',
+        lastSync: 'Never',
+        schedule: document.getElementById('mSchedule').value,
+        env:      document.getElementById('mEnv').value,
+        size:     '0GB',
+        tables:   0,
+        queries:  0,
+        desc:     document.getElementById('mDesc').value.trim() || `New ${selectedType} data source`,
+      };
+      sources.push(newSource);
+      showToast(`${newSource.name} added successfully`);
+    }
+
+    updateKPIs();
+    applyFilters();
+    closeModal();
+  }
+
+  /* ─────────────────────────────────────────────
+     TOAST
+  ───────────────────────────────────────────── */
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toastMsg').textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+  }
+
+  /* ─────────────────────────────────────────────
+     HELPERS
+  ───────────────────────────────────────────── */
+  function capitalize(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
+  /* ─────────────────────────────────────────────
+     AUTH
+  ───────────────────────────────────────────── */
+
+  window.onload = function() {
+    if (user.firstName) {
+      const initials = user.firstName[0] + (user.lastName ? user.lastName[0] : '');
+      document.getElementById('userAvatar').textContent = initials.toUpperCase();
+      document.getElementById('userName').textContent = user.firstName + ' ' + user.lastName;
+      document.getElementById('userRole').textContent = user.role || 'Viewer';
+    }
+  }
+
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = 'dwms-login.html';
+    }
+
+  /* close modal on overlay click */
+  document.getElementById('sourceModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+</script>
+</body>
+</html>

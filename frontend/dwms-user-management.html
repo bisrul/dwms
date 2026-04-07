@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DWMS — User Management</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; }
+    .app { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar { width: 200px; background: #0C447C; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; }
+    .sidebar-brand { display: flex; align-items: center; gap: 8px; padding: 1.25rem 1rem; border-bottom: 0.5px solid rgba(255,255,255,0.1); }
+    .brand-icon { width: 28px; height: 28px; background: #378ADD; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+    .brand-icon svg { width: 16px; height: 16px; }
+    .brand-name { font-size: 13px; font-weight: 600; color: #fff; }
+    .sidebar-nav { flex: 1; padding: 0.75rem 0; overflow-y: auto; }
+    .nav-section { font-size: 10px; color: #85B7EB; padding: 0.75rem 1rem 0.25rem; letter-spacing: 0.8px; text-transform: uppercase; }
+    .nav-item { display: flex; align-items: center; gap: 8px; padding: 0.5rem 1rem; font-size: 13px; color: #B5D4F4; cursor: pointer; text-decoration: none; transition: background 0.15s; }
+    .nav-item:hover { background: rgba(255,255,255,0.07); }
+    .nav-item.active { background: rgba(255,255,255,0.12); color: #fff; border-right: 2px solid #378ADD; }
+    .nav-item svg { width: 15px; height: 15px; opacity: 0.8; flex-shrink: 0; }
+    .sidebar-footer { padding: 1rem; border-top: 0.5px solid rgba(255,255,255,0.1); }
+    .avatar-row { display: flex; align-items: center; gap: 8px; }
+    .avatar { width: 28px; height: 28px; border-radius: 50%; background: #378ADD; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #fff; flex-shrink: 0; }
+    .avatar-name { font-size: 12px; color: #fff; font-weight: 600; }
+    .avatar-role { font-size: 10px; color: #85B7EB; }
+
+    /* ── Main ── */
+    .main { flex: 1; margin-left: 200px; display: flex; flex-direction: column; min-height: 100vh; }
+    .topbar { background: #fff; border-bottom: 0.5px solid #e0e0de; padding: 0.75rem 1.5rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+    .topbar-title { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+    .topbar-sub { font-size: 12px; color: #888; margin-top: 1px; }
+    .topbar-right { display: flex; gap: 8px; align-items: center; }
+
+    /* ── Buttons ── */
+    .btn-primary { font-size: 12px; padding: 6px 14px; border-radius: 8px; border: none; background: #185FA5; color: #fff; cursor: pointer; font-family: inherit; font-weight: 600; }
+    .btn-primary:hover { background: #0C447C; }
+    .btn-sm { font-size: 11px; padding: 4px 10px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; color: #1a1a1a; cursor: pointer; font-family: inherit; }
+    .btn-sm:hover { background: #f5f5f3; }
+    .btn-danger { font-size: 11px; padding: 4px 10px; border-radius: 8px; border: none; background: #A32D2D; color: #fff; cursor: pointer; font-family: inherit; }
+    .btn-danger:hover { background: #791F1F; }
+
+    /* ── Content ── */
+    .content { flex: 1; padding: 1.25rem 1.5rem; }
+
+    /* ── KPI Cards ── */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.25rem; }
+    .kpi-card { background: #fff; border: 0.5px solid #e0e0de; border-radius: 12px; padding: 1rem; }
+    .kpi-label { font-size: 11px; color: #888; margin-bottom: 4px; }
+    .kpi-value { font-size: 22px; font-weight: 600; color: #1a1a1a; }
+    .kpi-sub { font-size: 11px; color: #888; margin-top: 3px; }
+
+    /* ── Toolbar ── */
+    .toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; }
+    .search-input { height: 32px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; padding: 0 10px 0 32px; font-size: 12px; font-family: inherit; outline: none; width: 220px; transition: border-color 0.15s, box-shadow 0.15s; }
+    .search-input:focus { border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,0.12); }
+    .search-wrap { position: relative; }
+    .search-wrap svg { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); width: 13px; height: 13px; color: #aaa; pointer-events: none; }
+    .filter-select { height: 32px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; padding: 0 8px; font-size: 12px; font-family: inherit; outline: none; color: #1a1a1a; }
+
+    /* ── Table ── */
+    .table-card { background: #fff; border: 0.5px solid #e0e0de; border-radius: 12px; overflow: hidden; }
+    .users-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .users-table th { background: #f9f9f7; text-align: left; font-weight: 600; font-size: 11px; color: #888; padding: 8px 14px; border-bottom: 0.5px solid #e0e0de; white-space: nowrap; }
+    .users-table td { padding: 10px 14px; color: #1a1a1a; border-bottom: 0.5px solid #e0e0de; vertical-align: middle; }
+    .users-table tr:last-child td { border-bottom: none; }
+    .users-table tr:hover td { background: #fafaf8; }
+    .user-cell { display: flex; align-items: center; gap: 10px; }
+    .user-avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #fff; flex-shrink: 0; }
+    .user-name { font-size: 12px; font-weight: 600; color: #1a1a1a; }
+    .user-email { font-size: 11px; color: #888; margin-top: 1px; }
+
+    /* ── Pills ── */
+    .role-pill { font-size: 10px; padding: 2px 9px; border-radius: 20px; font-weight: 600; display: inline-block; }
+    .role-pill.admin    { background: #E6F1FB; color: #0C447C; }
+    .role-pill.analyst  { background: #E1F5EE; color: #085041; }
+    .role-pill.engineer { background: #FAEEDA; color: #633806; }
+    .role-pill.viewer   { background: #F1EFE8; color: #5F5E5A; }
+    .role-pill.dba      { background: #F0EAF8; color: #4A1A7A; }
+
+    .status-pill { font-size: 10px; padding: 2px 9px; border-radius: 20px; font-weight: 600; display: inline-block; }
+    .status-pill.active   { background: #EAF3DE; color: #27500A; }
+    .status-pill.inactive { background: #F1EFE8; color: #5F5E5A; }
+    .status-pill.pending  { background: #FAEEDA; color: #633806; }
+    .status-pill.suspended{ background: #FCEBEB; color: #791F1F; }
+
+    /* ── Actions ── */
+    .actions { display: flex; gap: 5px; align-items: center; }
+
+    /* ── Pagination ── */
+    .pagination { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-top: 0.5px solid #e0e0de; background: #f9f9f7; }
+    .page-info { font-size: 11px; color: #888; }
+    .page-btns { display: flex; gap: 4px; }
+    .page-btn { width: 28px; height: 28px; border-radius: 6px; border: 0.5px solid #ccc; background: #fff; font-size: 11px; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; }
+    .page-btn:hover { background: #f5f5f3; }
+    .page-btn.active { background: #185FA5; color: #fff; border-color: #185FA5; }
+    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── Modal Overlay ── */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: #fff; border-radius: 14px; padding: 1.5rem; width: 420px; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
+    .modal-title { font-size: 16px; font-weight: 600; color: #1a1a1a; margin-bottom: 0.25rem; }
+    .modal-sub { font-size: 12px; color: #888; margin-bottom: 1.25rem; }
+    .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1.25rem; }
+    .field { margin-bottom: 0.9rem; }
+    .field label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 5px; }
+    .field input, .field select { width: 100%; height: 36px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; padding: 0 10px; font-size: 13px; color: #1a1a1a; font-family: inherit; outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
+    .field input:focus, .field select:focus { border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,0.12); }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .error-msg { display: none; font-size: 12px; color: #a32d2d; padding: 7px 10px; background: #fcebeb; border-radius: 8px; border: 0.5px solid #f09595; margin-top: 0.5rem; }
+    .success-toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #1a1a1a; color: #fff; font-size: 12px; padding: 10px 16px; border-radius: 10px; z-index: 200; display: none; align-items: center; gap: 8px; }
+    .success-toast.show { display: flex; }
+
+    /* ── Permission Matrix ── */
+    .perm-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 0.75rem; }
+    .perm-table th { text-align: left; font-weight: 600; color: #888; padding: 6px 8px; border-bottom: 0.5px solid #e0e0de; }
+    .perm-table td { padding: 6px 8px; border-bottom: 0.5px solid #e0e0de; color: #1a1a1a; }
+    .perm-table tr:last-child td { border-bottom: none; }
+    .perm-check { width: 14px; height: 14px; }
+    .check-yes { color: #3B6D11; font-size: 13px; }
+    .check-no  { color: #ccc; font-size: 13px; }
+
+    /* ── Profile Drawer ── */
+    .drawer-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 90; }
+    .drawer-overlay.open { display: block; }
+    .drawer { position: fixed; top: 0; right: -360px; width: 360px; height: 100vh; background: #fff; border-left: 0.5px solid #e0e0de; z-index: 95; transition: right 0.25s ease; overflow-y: auto; display: flex; flex-direction: column; }
+    .drawer.open { right: 0; }
+    .drawer-header { padding: 1.25rem; border-bottom: 0.5px solid #e0e0de; display: flex; align-items: center; justify-content: space-between; }
+    .drawer-title { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+    .drawer-close { width: 28px; height: 28px; border-radius: 6px; border: 0.5px solid #ccc; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #888; }
+    .drawer-body { padding: 1.25rem; flex: 1; }
+    .profile-top { display: flex; flex-direction: column; align-items: center; padding: 1rem 0 1.25rem; border-bottom: 0.5px solid #e0e0de; margin-bottom: 1.25rem; }
+    .profile-avatar { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 600; color: #fff; margin-bottom: 0.75rem; }
+    .profile-name { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+    .profile-role { font-size: 12px; color: #888; margin-top: 3px; }
+    .profile-stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 1.25rem; }
+    .profile-stat { background: #f5f5f3; border-radius: 8px; padding: 0.6rem; text-align: center; }
+    .profile-stat-val { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+    .profile-stat-lbl { font-size: 10px; color: #888; margin-top: 2px; }
+    .detail-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 0.5px solid #e0e0de; font-size: 12px; }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-label { color: #888; }
+    .detail-value { color: #1a1a1a; font-weight: 500; text-align: right; }
+    .drawer-footer { padding: 1rem 1.25rem; border-top: 0.5px solid #e0e0de; display: flex; gap: 8px; }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .sidebar { width: 60px; }
+      .brand-name, .nav-section, .avatar-role, .avatar-name { display: none; }
+      .main { margin-left: 60px; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+      .toolbar { flex-direction: column; align-items: stretch; }
+      .search-input { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <script>
+      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (!token) {
+        window.location.href = 'dwms-login.html';
+      }
+    </script>
+<div class="app">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 16 16" fill="none">
+          <rect x="1" y="1" width="6" height="6" rx="1" fill="white" opacity="0.9"/>
+          <rect x="9" y="1" width="6" height="6" rx="1" fill="white" opacity="0.6"/>
+          <rect x="1" y="9" width="6" height="6" rx="1" fill="white" opacity="0.6"/>
+          <rect x="9" y="9" width="6" height="6" rx="1" fill="white" opacity="0.35"/>
+        </svg>
+      </div>
+      <span class="brand-name">DWMS</span>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-section">Main</div>
+      <a href="dwms-dashboard.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" fill="currentColor"/><rect x="9" y="1" width="6" height="6" rx="1" fill="currentColor" opacity="0.5"/><rect x="1" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.5"/><rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.3"/></svg>
+        Dashboard
+      </a>
+      <a href="dwms-data-resource.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Data sources
+      </a>
+      <a href="dwms-etl-pipelines.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M8 2v4l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/></svg>
+        ETL pipelines
+      </a>
+      <a href="dwms-schema-manager.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="12" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
+        Schema manager
+      </a>
+      <a href="dwms-query-editor.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M5 7h6M5 10h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Query editor
+      </a>
+      <div class="nav-section">Admin</div>
+      <a href="#" class="nav-item active">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M2 14c0-3 2.7-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Users
+      </a>
+      <a href="dwms-setting.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 2v1.5M8 12.5V14M2 8h1.5M12.5 8H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Settings
+      </a>
+    </div>
+    <div class="sidebar-footer">
+      <div class="avatar-row">
+        <div class="avatar" id="userAvatar">AD</div>
+        <div class="avatar-info">
+          <div class="avatar-name" id="userName">Admin</div>
+          <div class="avatar-role" id="userRole">Administrator</div>
+        </div>
+      </div>
+      <div style="margin-top:8px;">
+        <button onclick="logout()" style="width:100%;font-size:11px;padding:5px;border-radius:6px;border:0.5px solid rgba(255,255,255,0.2);background:transparent;color:#B5D4F4;cursor:pointer;">
+          Sign out
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">User management</div>
+        <div class="topbar-sub">Manage accounts, roles and permissions</div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-sm" onclick="openPermissions()">Permissions matrix</button>
+        <button class="btn-primary" onclick="openAddUser()">+ Invite user</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- KPI Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Total users</div>
+          <div class="kpi-value" id="kpiTotal">0</div>
+          <div class="kpi-sub">registered accounts</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Active</div>
+          <div class="kpi-value" style="color:#3B6D11;" id="kpiActive">0</div>
+          <div class="kpi-sub">online this week</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Pending</div>
+          <div class="kpi-value" style="color:#BA7517;" id="kpiPending">0</div>
+          <div class="kpi-sub">awaiting verification</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Admins</div>
+          <div class="kpi-value" style="color:#185FA5;" id="kpiAdmins">0</div>
+          <div class="kpi-sub">with full access</div>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="search-wrap">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="6.5" cy="6.5" r="4.5"/><path d="M10 10l3 3" stroke-linecap="round"/>
+          </svg>
+          <input class="search-input" type="text" placeholder="Search users..."
+            id="searchInput" oninput="applyFilters()" />
+        </div>
+        <select class="filter-select" id="filterRole" onchange="applyFilters()">
+          <option value="">All roles</option>
+          <option value="admin">Admin</option>
+          <option value="analyst">Data Analyst</option>
+          <option value="engineer">Data Engineer</option>
+          <option value="dba">DBA</option>
+          <option value="viewer">Viewer</option>
+        </select>
+        <select class="filter-select" id="filterStatus" onchange="applyFilters()">
+          <option value="">All status</option>
+          <option value="active">Active</option>
+          <option value="pending">Pending</option>
+          <option value="inactive">Inactive</option>
+          <option value="suspended">Suspended</option>
+        </select>
+        <span style="margin-left:auto;font-size:11px;color:#888;" id="resultCount"></span>
+      </div>
+
+      <!-- Users Table -->
+      <div class="table-card">
+        <table class="users-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Organization</th>
+              <th>Last active</th>
+              <th>Joined</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody"></tbody>
+        </table>
+        <div class="pagination">
+          <div class="page-info" id="pageInfo"></div>
+          <div class="page-btns" id="pageBtns"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Add/Edit User Modal ── -->
+  <div class="modal-overlay" id="userModal">
+    <div class="modal">
+      <div class="modal-title" id="modalTitle">Invite user</div>
+      <div class="modal-sub" id="modalSub">Send an invitation to a new team member</div>
+      <div class="row2">
+        <div class="field">
+          <label>First name</label>
+          <input type="text" id="mFirstName" placeholder="John" />
+        </div>
+        <div class="field">
+          <label>Last name</label>
+          <input type="text" id="mLastName" placeholder="Doe" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Work email</label>
+        <input type="email" id="mEmail" placeholder="you@company.com" />
+      </div>
+      <div class="field">
+        <label>Organization</label>
+        <input type="text" id="mOrg" placeholder="Company name" />
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Role</label>
+          <select id="mRole">
+            <option value="admin">Admin</option>
+            <option value="analyst">Data Analyst</option>
+            <option value="engineer">Data Engineer</option>
+            <option value="dba">DBA</option>
+            <option value="viewer">Viewer</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Status</label>
+          <select id="mStatus">
+            <option value="active">Active</option>
+            <option value="pending">Pending</option>
+            <option value="inactive">Inactive</option>
+            <option value="suspended">Suspended</option>
+          </select>
+        </div>
+      </div>
+      <div class="error-msg" id="modalError"></div>
+      <div class="modal-footer">
+        <button class="btn-sm" onclick="closeModal()">Cancel</button>
+        <button class="btn-primary" id="modalSubmitBtn" onclick="submitUser()">Send invite</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Permissions Matrix Modal ── -->
+  <div class="modal-overlay" id="permModal">
+    <div class="modal" style="width:560px;max-width:95vw;">
+      <div class="modal-title">Permissions matrix</div>
+      <div class="modal-sub">Role-based access control overview</div>
+      <table class="perm-table">
+        <thead>
+          <tr>
+            <th>Permission</th>
+            <th>Admin</th>
+            <th>Engineer</th>
+            <th>Analyst</th>
+            <th>DBA</th>
+            <th>Viewer</th>
+          </tr>
+        </thead>
+        <tbody id="permTableBody"></tbody>
+      </table>
+      <div class="modal-footer">
+        <button class="btn-sm" onclick="closePermModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── User Profile Drawer ── -->
+  <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+  <div class="drawer" id="profileDrawer">
+    <div class="drawer-header">
+      <div class="drawer-title">User profile</div>
+      <button class="drawer-close" onclick="closeDrawer()">✕</button>
+    </div>
+    <div class="drawer-body" id="drawerBody"></div>
+    <div class="drawer-footer" id="drawerFooter"></div>
+  </div>
+
+  <!-- ── Toast ── -->
+  <div class="success-toast" id="toast">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <circle cx="7" cy="7" r="6" fill="#3B6D11"/>
+      <path d="M4 7l2 2 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span id="toastMsg"></span>
+  </div>
+
+</div>
+
+<script>
+  // ── Data ──
+  const avatarColors = ['#185FA5','#1D9E75','#BA7517','#A32D2D','#6B3FA0','#0C447C','#2E7D32','#795548'];
+
+  let users = [
+    { id:1,  firstName:'Ahmad',   lastName:'Wijaya',    email:'ahmad.wijaya@company.com',    org:'PT Nusantara',   role:'admin',    status:'active',    lastActive:'2 min ago',   joined:'Jan 12, 2024', queries:284, pipelines:18, logins:142 },
+    { id:2,  firstName:'Siti',    lastName:'Rahayu',    email:'siti.rahayu@company.com',     org:'PT Nusantara',   role:'analyst',  status:'active',    lastActive:'1 hour ago',  joined:'Feb 3, 2024',  queries:198, pipelines:4,  logins:98  },
+    { id:3,  firstName:'Budi',    lastName:'Santoso',   email:'budi.santoso@company.com',    org:'PT Nusantara',   role:'engineer', status:'active',    lastActive:'3 hours ago', joined:'Jan 20, 2024', queries:142, pipelines:22, logins:87  },
+    { id:4,  firstName:'Dewi',    lastName:'Kusuma',    email:'dewi.kusuma@analytics.co',    org:'Analytics Co',   role:'analyst',  status:'active',    lastActive:'Yesterday',   joined:'Mar 5, 2024',  queries:210, pipelines:2,  logins:74  },
+    { id:5,  firstName:'Eko',     lastName:'Prasetyo',  email:'eko.prasetyo@analytics.co',   org:'Analytics Co',   role:'dba',      status:'active',    lastActive:'2 days ago',  joined:'Jan 8, 2024',  queries:88,  pipelines:31, logins:120 },
+    { id:6,  firstName:'Fitri',   lastName:'Handayani', email:'fitri.h@datatech.id',         org:'DataTech ID',    role:'viewer',   status:'pending',   lastActive:'Never',       joined:'Jun 1, 2024',  queries:0,   pipelines:0,  logins:0   },
+    { id:7,  firstName:'Ganda',   lastName:'Putra',     email:'ganda.putra@datatech.id',     org:'DataTech ID',    role:'analyst',  status:'active',    lastActive:'5 hours ago', joined:'Apr 14, 2024', queries:156, pipelines:6,  logins:61  },
+    { id:8,  firstName:'Hani',    lastName:'Lestari',   email:'hani.lestari@company.com',    org:'PT Nusantara',   role:'viewer',   status:'inactive',  lastActive:'2 weeks ago', joined:'Feb 28, 2024', queries:12,  pipelines:0,  logins:15  },
+    { id:9,  firstName:'Irwan',   lastName:'Setiawan',  email:'irwan.s@analytics.co',        org:'Analytics Co',   role:'engineer', status:'active',    lastActive:'Today',       joined:'Mar 19, 2024', queries:98,  pipelines:14, logins:55  },
+    { id:10, firstName:'Joko',    lastName:'Widodo',    email:'joko.w@company.com',          org:'PT Nusantara',   role:'admin',    status:'active',    lastActive:'30 min ago',  joined:'Jan 5, 2024',  queries:320, pipelines:24, logins:180 },
+    { id:11, firstName:'Kartika', lastName:'Sari',      email:'kartika.s@datatech.id',       org:'DataTech ID',    role:'analyst',  status:'pending',   lastActive:'Never',       joined:'Jun 5, 2024',  queries:0,   pipelines:0,  logins:0   },
+    { id:12, firstName:'Luki',    lastName:'Firmansyah',email:'luki.f@company.com',          org:'PT Nusantara',   role:'dba',      status:'suspended', lastActive:'1 month ago', joined:'Dec 10, 2023', queries:44,  pipelines:8,  logins:32  },
+  ];
+
+  const permissions = [
+    { name:'View dashboard',       admin:1, engineer:1, analyst:1, dba:1, viewer:1 },
+    { name:'Run queries',          admin:1, engineer:1, analyst:1, dba:1, viewer:0 },
+    { name:'Export data',          admin:1, engineer:1, analyst:1, dba:0, viewer:0 },
+    { name:'Manage pipelines',     admin:1, engineer:1, analyst:0, dba:0, viewer:0 },
+    { name:'Edit schema',          admin:1, engineer:1, analyst:0, dba:1, viewer:0 },
+    { name:'Manage data sources',  admin:1, engineer:1, analyst:0, dba:0, viewer:0 },
+    { name:'Invite users',         admin:1, engineer:0, analyst:0, dba:0, viewer:0 },
+    { name:'Manage roles',         admin:1, engineer:0, analyst:0, dba:0, viewer:0 },
+    { name:'System settings',      admin:1, engineer:0, analyst:0, dba:0, viewer:0 },
+    { name:'View audit logs',      admin:1, engineer:0, analyst:0, dba:1, viewer:0 },
+  ];
+
+  // ── State ──
+  let currentPage = 1;
+  const pageSize  = 8;
+  let filteredUsers = [...users];
+  let editingId = null;
+
+  // ── Init ──
+  function init() {
+    updateKPIs();
+    applyFilters();
+    renderPermissions();
+  }
+
+  function updateKPIs() {
+    document.getElementById('kpiTotal').textContent   = users.length;
+    document.getElementById('kpiActive').textContent  = users.filter(u => u.status === 'active').length;
+    document.getElementById('kpiPending').textContent = users.filter(u => u.status === 'pending').length;
+    document.getElementById('kpiAdmins').textContent  = users.filter(u => u.role === 'admin').length;
+  }
+
+  // ── Filter & Search ──
+  function applyFilters() {
+    const q      = document.getElementById('searchInput').value.toLowerCase();
+    const role   = document.getElementById('filterRole').value;
+    const status = document.getElementById('filterStatus').value;
+
+    filteredUsers = users.filter(u => {
+      const matchQ = !q ||
+        (u.firstName + ' ' + u.lastName).toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        u.org.toLowerCase().includes(q);
+      const matchRole   = !role   || u.role   === role;
+      const matchStatus = !status || u.status === status;
+      return matchQ && matchRole && matchStatus;
+    });
+
+    currentPage = 1;
+    renderTable();
+  }
+
+  // ── Render Table ──
+  function renderTable() {
+    const start  = (currentPage - 1) * pageSize;
+    const paged  = filteredUsers.slice(start, start + pageSize);
+    const tbody  = document.getElementById('usersTableBody');
+    const total  = filteredUsers.length;
+    const pages  = Math.ceil(total / pageSize);
+
+    document.getElementById('resultCount').textContent =
+      total === users.length ? `${total} users` : `${total} of ${users.length} users`;
+
+    tbody.innerHTML = paged.length === 0
+      ? `<tr><td colspan="7" style="text-align:center;padding:2rem;color:#aaa;">
+           No users found matching your filters.
+         </td></tr>`
+      : paged.map(u => {
+          const initials = u.firstName[0] + u.lastName[0];
+          const color    = avatarColors[u.id % avatarColors.length];
+          const roleLabel = { admin:'Admin', analyst:'Data Analyst', engineer:'Data Engineer', dba:'DBA', viewer:'Viewer' }[u.role] || u.role;
+          return `
+            <tr>
+              <td>
+                <div class="user-cell">
+                  <div class="user-avatar" style="background:${color};">${initials}</div>
+                  <div>
+                    <div class="user-name">${u.firstName} ${u.lastName}</div>
+                    <div class="user-email">${u.email}</div>
+                  </div>
+                </div>
+              </td>
+              <td><span class="role-pill ${u.role}">${roleLabel}</span></td>
+              <td><span class="status-pill ${u.status}">${capitalize(u.status)}</span></td>
+              <td style="color:#555;">${u.org}</td>
+              <td style="color:#888;">${u.lastActive}</td>
+              <td style="color:#888;">${u.joined}</td>
+              <td>
+                <div class="actions">
+                  <button class="btn-sm" onclick="openProfile(${u.id})">View</button>
+                  <button class="btn-sm" onclick="openEditUser(${u.id})">Edit</button>
+                  <button class="btn-danger" onclick="deleteUser(${u.id})">Remove</button>
+                </div>
+              </td>
+            </tr>`;
+        }).join('');
+
+    // Pagination info
+    document.getElementById('pageInfo').textContent =
+      total === 0 ? 'No results' :
+      `Showing ${start + 1}–${Math.min(start + pageSize, total)} of ${total}`;
+
+    // Page buttons
+    const btnContainer = document.getElementById('pageBtns');
+    btnContainer.innerHTML = '';
+
+    // Prev
+    const prev = document.createElement('button');
+    prev.className = 'page-btn';
+    prev.textContent = '←';
+    prev.disabled = currentPage === 1;
+    prev.onclick = () => { currentPage--; renderTable(); };
+    btnContainer.appendChild(prev);
+
+    // Page numbers
+    for (let i = 1; i <= pages; i++) {
+      const btn = document.createElement('button');
+      btn.className = 'page-btn' + (i === currentPage ? ' active' : '');
+      btn.textContent = i;
+      btn.onclick = ((p) => () => { currentPage = p; renderTable(); })(i);
+      btnContainer.appendChild(btn);
+    }
+
+    // Next
+    const next = document.createElement('button');
+    next.className = 'page-btn';
+    next.textContent = '→';
+    next.disabled = currentPage === pages || pages === 0;
+    next.onclick = () => { currentPage++; renderTable(); };
+    btnContainer.appendChild(next);
+  }
+
+  // ── Add / Edit User Modal ──
+  function openAddUser() {
+    editingId = null;
+    document.getElementById('modalTitle').textContent   = 'Invite user';
+    document.getElementById('modalSub').textContent     = 'Send an invitation to a new team member';
+    document.getElementById('modalSubmitBtn').textContent = 'Send invite';
+    clearModalFields();
+    document.getElementById('userModal').classList.add('open');
+  }
+
+  function openEditUser(id) {
+    const u = users.find(x => x.id === id);
+    editingId = id;
+    document.getElementById('modalTitle').textContent     = 'Edit user';
+    document.getElementById('modalSub').textContent       = `Editing ${u.firstName} ${u.lastName}`;
+    document.getElementById('modalSubmitBtn').textContent = 'Save changes';
+    document.getElementById('mFirstName').value = u.firstName;
+    document.getElementById('mLastName').value  = u.lastName;
+    document.getElementById('mEmail').value     = u.email;
+    document.getElementById('mOrg').value       = u.org;
+    document.getElementById('mRole').value      = u.role;
+    document.getElementById('mStatus').value    = u.status;
+    document.getElementById('modalError').style.display = 'none';
+    document.getElementById('userModal').classList.add('open');
+  }
+
+  function clearModalFields() {
+    ['mFirstName','mLastName','mEmail','mOrg'].forEach(id =>
+      document.getElementById(id).value = '');
+    document.getElementById('mRole').value   = 'analyst';
+    document.getElementById('mStatus').value = 'pending';
+    document.getElementById('modalError').style.display = 'none';
+  }
+
+  function closeModal() {
+    document.getElementById('userModal').classList.remove('open');
+  }
+
+  function submitUser() {
+    const firstName = document.getElementById('mFirstName').value.trim();
+    const lastName  = document.getElementById('mLastName').value.trim();
+    const email     = document.getElementById('mEmail').value.trim();
+    const org       = document.getElementById('mOrg').value.trim();
+    const role      = document.getElementById('mRole').value;
+    const status    = document.getElementById('mStatus').value;
+    const errEl     = document.getElementById('modalError');
+
+    errEl.style.display = 'none';
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!firstName || !lastName) { showModalError('Please enter a full name.'); return; }
+    if (!emailRegex.test(email)) { showModalError('Please enter a valid email address.'); return; }
+    if (!org) { showModalError('Please enter an organization name.'); return; }
+    if (!editingId && users.find(u => u.email === email)) {
+      showModalError('A user with this email already exists.'); return;
+    }
+
+    if (editingId) {
+      const u = users.find(x => x.id === editingId);
+      Object.assign(u, { firstName, lastName, email, org, role, status });
+      showToast(`${firstName} ${lastName} updated successfully`);
+    } else {
+      users.push({
+        id: users.length + 1,
+        firstName, lastName, email, org, role, status,
+        lastActive: 'Never', joined: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
+        queries: 0, pipelines: 0, logins: 0
+      });
+      showToast(`Invite sent to ${email}`);
+    }
+
+    closeModal();
+    updateKPIs();
+    applyFilters();
+  }
+
+  function showModalError(msg) {
+    const el = document.getElementById('modalError');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  // ── Delete User ──
+  function deleteUser(id) {
+    const u = users.find(x => x.id === id);
+    if (!confirm(`Remove ${u.firstName} ${u.lastName}? This cannot be undone.`)) return;
+    users = users.filter(x => x.id !== id);
+    filteredUsers = filteredUsers.filter(x => x.id !== id);
+    updateKPIs();
+    renderTable();
+    showToast(`${u.firstName} ${u.lastName} removed`);
+  }
+
+  // ── Profile Drawer ──
+  function openProfile(id) {
+    const u = users.find(x => x.id === id);
+    const color    = avatarColors[u.id % avatarColors.length];
+    const initials = u.firstName[0] + u.lastName[0];
+    const roleLabel = { admin:'Admin', analyst:'Data Analyst', engineer:'Data Engineer', dba:'DBA', viewer:'Viewer' }[u.role] || u.role;
+
+    document.getElementById('drawerBody').innerHTML = `
+      <div class="profile-top">
+        <div class="profile-avatar" style="background:${color};">${initials}</div>
+        <div class="profile-name">${u.firstName} ${u.lastName}</div>
+        <div class="profile-role">${roleLabel} &middot; ${u.org}</div>
+        <div style="margin-top:8px;">
+          <span class="status-pill ${u.status}">${capitalize(u.status)}</span>
+        </div>
+      </div>
+
+      <div class="profile-stat-row">
+        <div class="profile-stat">
+          <div class="profile-stat-val">${u.queries}</div>
+          <div class="profile-stat-lbl">Queries</div>
+        </div>
+        <div class="profile-stat">
+          <div class="profile-stat-val">${u.pipelines}</div>
+          <div class="profile-stat-lbl">Pipelines</div>
+        </div>
+        <div class="profile-stat">
+          <div class="profile-stat-val">${u.logins}</div>
+          <div class="profile-stat-lbl">Logins</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="detail-row">
+          <span class="detail-label">Email</span>
+          <span class="detail-value">${u.email}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Organization</span>
+          <span class="detail-value">${u.org}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Role</span>
+          <span class="detail-value">
+            <span class="role-pill ${u.role}">${roleLabel}</span>
+          </span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Status</span>
+          <span class="detail-value">
+            <span class="status-pill ${u.status}">${capitalize(u.status)}</span>
+          </span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Last active</span>
+          <span class="detail-value">${u.lastActive}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Joined</span>
+          <span class="detail-value">${u.joined}</span>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('drawerFooter').innerHTML = `
+      <button class="btn-sm" style="flex:1;" onclick="closeDrawer();openEditUser(${u.id})">Edit user</button>
+      <button class="btn-danger" style="flex:1;" onclick="closeDrawer();deleteUser(${u.id})">Remove</button>
+    `;
+
+    document.getElementById('drawerOverlay').classList.add('open');
+    document.getElementById('profileDrawer').classList.add('open');
+  }
+
+  function closeDrawer() {
+    document.getElementById('drawerOverlay').classList.remove('open');
+    document.getElementById('profileDrawer').classList.remove('open');
+  }
+
+  // ── Permissions Modal ──
+  function openPermissions() {
+    document.getElementById('permModal').classList.add('open');
+  }
+
+  function closePermModal() {
+    document.getElementById('permModal').classList.remove('open');
+  }
+
+  function renderPermissions() {
+    document.getElementById('permTableBody').innerHTML = permissions.map(p => `
+      <tr>
+        <td>${p.name}</td>
+        <td><span class="${p.admin   ? 'check-yes' : 'check-no'}">${p.admin   ? '✓' : '✗'}</span></td>
+        <td><span class="${p.engineer? 'check-yes' : 'check-no'}">${p.engineer? '✓' : '✗'}</span></td>
+        <td><span class="${p.analyst ? 'check-yes' : 'check-no'}">${p.analyst ? '✓' : '✗'}</span></td>
+        <td><span class="${p.dba     ? 'check-yes' : 'check-no'}">${p.dba     ? '✓' : '✗'}</span></td>
+        <td><span class="${p.viewer  ? 'check-yes' : 'check-no'}">${p.viewer  ? '✓' : '✗'}</span></td>
+      </tr>
+    `).join('');
+  }
+
+  // ── Close modals on backdrop click ──
+  document.getElementById('userModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+  document.getElementById('permModal').addEventListener('click', function(e) {
+    if (e.target === this) closePermModal();
+  });
+
+  // ── Toast ──
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toastMsg').textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+
+  // ── Utils ──
+  function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  init();
+
+  window.onload = function() {
+    if (user.firstName) {
+      const initials = user.firstName[0] + (user.lastName ? user.lastName[0] : '');
+      document.getElementById('userAvatar').textContent = initials.toUpperCase();
+      document.getElementById('userName').textContent = user.firstName + ' ' + user.lastName;
+      document.getElementById('userRole').textContent = user.role || 'Viewer';
+    }
+  }
+
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = 'dwms-login.html';
+    }
+</script>
+</body>
+</html>
