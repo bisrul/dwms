@@ -23,6 +23,9 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 
+const etlRoutes = require('./routes/etl');
+app.use('/api/etl', etlRoutes);
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
