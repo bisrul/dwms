@@ -8,9 +8,13 @@ const app = express();
 // ← Allow your frontend domain
 app.use(cors({
   origin: [
+    'https://dwms-frontend.onrender.com',
     'http://localhost:3000',
-    'https://your-frontend.vercel.app'   // update this later
+    'http://localhost:5000',
+    'http://127.0.0.1:5500',
   ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
 
