@@ -297,26 +297,21 @@
         }
       });
 
-      // If token expired or unauthorized, redirect to login
-      if (res.status === 401) {
-        logout();
-        return;
-      }
-
+      if (res.status === 401) { logout(); return; }
       if (!res.ok) throw new Error('Failed to fetch stats');
 
       const data = await res.json();
 
       // ✅ Update KPI cards with real data
-      document.getElementById('totalUsers').textContent      = data.totalUsers      ?? '—';
-      document.getElementById('activeUsers').textContent     = data.activeUsers     ?? '—';
-      document.getElementById('totalAdmins').textContent     = data.totalAdmins     ?? '—';
-      document.getElementById('newThisMonth').textContent    = data.newThisMonth    ?? '—';
+      document.getElementById('totalUsers').textContent      = data.totalUsers      ?? '0';
+      document.getElementById('activeUsers').textContent     = data.activeUsers     ?? '0';
+      document.getElementById('totalAdmins').textContent     = data.totalAdmins     ?? '0';
+      document.getElementById('newThisMonth').textContent    = data.newThisMonth    ?? '0';
 
-      document.getElementById('totalUsersChange').textContent   = `Total registered users`;
-      document.getElementById('activeUsersChange').textContent  = `Currently active`;
-      document.getElementById('totalAdminsChange').textContent  = `Admin accounts`;
-      document.getElementById('newThisMonthChange').textContent = `Joined this month`;
+      document.getElementById('totalUsersChange').textContent   = 'Total registered users';
+      document.getElementById('activeUsersChange').textContent  = 'Active in last 30 days';
+      document.getElementById('totalAdminsChange').textContent  = 'Admin accounts';
+      document.getElementById('newThisMonthChange').textContent = 'Joined this month';
 
       // ✅ Update last updated time
       const now = new Date();
@@ -325,25 +320,48 @@
 
     } catch (err) {
       console.error('Dashboard stats error:', err);
-      document.getElementById('totalUsers').textContent   = 'Error';
-      document.getElementById('activeUsers').textContent  = 'Error';
-      document.getElementById('totalAdmins').textContent  = 'Error';
-      document.getElementById('newThisMonth').textContent = 'Error';
+      document.getElementById('totalUsers').textContent      = '—';
+      document.getElementById('activeUsers').textContent     = '—';
+      document.getElementById('totalAdmins').textContent     = '—';
+      document.getElementById('newThisMonth').textContent    = '—';
+      document.getElementById('totalUsersChange').textContent   = 'Could not load';
+      document.getElementById('activeUsersChange').textContent  = 'Could not load';
+      document.getElementById('totalAdminsChange').textContent  = 'Could not load';
+      document.getElementById('newThisMonthChange').textContent = 'Could not load';
     }
+  }
+
+  // ── Load activity feed ────────────────────────────────────────
+  function loadActivityFeed() {
+    const activities = [
+      { dot:'#639922', text:'Sales ETL pipeline completed successfully', time:'2 minutes ago' },
+      { dot:'#E24B4A', text:'Logs ETL failed — connection timeout',       time:'18 minutes ago' },
+      { dot:'#378ADD', text:'New data source added: BigQuery prod',       time:'1 hour ago' },
+      { dot:'#639922', text:'CRM Sync processed 340K records',            time:'3 hours ago' },
+      { dot:'#BA7517', text:'Storage quota at 84% — consider expanding',  time:'5 hours ago' },
+    ];
+    const list = document.getElementById('activityList');
+    list.innerHTML = activities.map(a => `
+      <div class="activity-item">
+        <div class="act-dot" style="background:${a.dot};"></div>
+        <div>
+          <div class="act-text">${a.text}</div>
+          <div class="act-time">${a.time}</div>
+        </div>
+      </div>
+    `).join('');
   }
 
   // ── Load user info in sidebar ─────────────────────────────────
   window.onload = function () {
-    // Show user info
     if (user && user.firstName) {
       const initials = user.firstName[0] + (user.lastName ? user.lastName[0] : '');
       document.getElementById('userAvatar').textContent = initials.toUpperCase();
       document.getElementById('userName').textContent   = user.firstName + ' ' + (user.lastName || '');
       document.getElementById('userRole').textContent   = user.role || 'Viewer';
     }
-
-    // ✅ Fetch real stats from backend
     loadDashboardStats();
+    loadActivityFeed();
   };
 
   // ── Logout ────────────────────────────────────────────────────
