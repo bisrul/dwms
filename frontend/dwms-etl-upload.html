@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DWMS — ETL Upload</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; }
+    .app { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar { width: 200px; background: #0C447C; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; }
+    .sidebar-brand { display: flex; align-items: center; gap: 8px; padding: 1.25rem 1rem; border-bottom: 0.5px solid rgba(255,255,255,0.1); }
+    .brand-icon { width: 28px; height: 28px; background: #378ADD; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+    .brand-icon svg { width: 16px; height: 16px; }
+    .brand-name { font-size: 13px; font-weight: 600; color: #fff; }
+    .sidebar-nav { flex: 1; padding: 0.75rem 0; overflow-y: auto; }
+    .nav-section { font-size: 10px; color: #85B7EB; padding: 0.75rem 1rem 0.25rem; letter-spacing: 0.8px; text-transform: uppercase; }
+    .nav-item { display: flex; align-items: center; gap: 8px; padding: 0.5rem 1rem; font-size: 13px; color: #B5D4F4; cursor: pointer; text-decoration: none; transition: background 0.15s; }
+    .nav-item:hover { background: rgba(255,255,255,0.07); }
+    .nav-item.active { background: rgba(255,255,255,0.12); color: #fff; border-right: 2px solid #378ADD; }
+    .nav-item svg { width: 15px; height: 15px; opacity: 0.8; flex-shrink: 0; }
+    .sidebar-footer { padding: 1rem; border-top: 0.5px solid rgba(255,255,255,0.1); }
+    .avatar-row { display: flex; align-items: center; gap: 8px; }
+    .avatar { width: 28px; height: 28px; border-radius: 50%; background: #378ADD; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #fff; }
+    .avatar-name { font-size: 12px; color: #fff; font-weight: 600; }
+    .avatar-role { font-size: 10px; color: #85B7EB; }
+
+    /* ── Main ── */
+    .main { flex: 1; margin-left: 200px; display: flex; flex-direction: column; min-height: 100vh; }
+    .topbar { background: #fff; border-bottom: 0.5px solid #e0e0de; padding: 0.75rem 1.5rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+    .topbar-title { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+    .topbar-sub { font-size: 12px; color: #888; margin-top: 1px; }
+    .content { padding: 1.5rem; }
+
+    /* ── Steps ── */
+    .steps { display: flex; align-items: center; gap: 0; margin-bottom: 1.5rem; }
+    .step { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #888; }
+    .step.active { color: #185FA5; font-weight: 600; }
+    .step.done { color: #3B6D11; }
+    .step-num { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid #ccc; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; }
+    .step.active .step-num { border-color: #185FA5; background: #185FA5; color: #fff; }
+    .step.done .step-num { border-color: #3B6D11; background: #3B6D11; color: #fff; }
+    .step-line { flex: 1; height: 1px; background: #e0e0de; margin: 0 8px; max-width: 60px; }
+
+    /* ── Cards ── */
+    .card { background: #fff; border: 0.5px solid #e0e0de; border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+    .card-title { font-size: 14px; font-weight: 600; color: #1a1a1a; margin-bottom: 0.25rem; }
+    .card-sub { font-size: 12px; color: #888; margin-bottom: 1.25rem; }
+
+    /* ── Upload Zone ── */
+    .upload-zone { border: 2px dashed #ccc; border-radius: 12px; padding: 3rem 2rem; text-align: center; cursor: pointer; transition: all 0.2s; background: #fafaf8; }
+    .upload-zone:hover, .upload-zone.dragover { border-color: #185FA5; background: #E6F1FB; }
+    .upload-zone svg { width: 40px; height: 40px; color: #aaa; margin-bottom: 1rem; }
+    .upload-zone.dragover svg { color: #185FA5; }
+    .upload-title { font-size: 14px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
+    .upload-sub { font-size: 12px; color: #888; }
+    .upload-formats { display: flex; gap: 8px; justify-content: center; margin-top: 1rem; }
+    .format-badge { font-size: 10px; padding: 3px 8px; border-radius: 20px; font-weight: 600; background: #E6F1FB; color: #0C447C; }
+
+    /* ── Buttons ── */
+    .btn-primary { font-size: 12px; padding: 8px 18px; border-radius: 8px; border: none; background: #185FA5; color: #fff; cursor: pointer; font-family: inherit; font-weight: 600; transition: background 0.15s; }
+    .btn-primary:hover { background: #0C447C; }
+    .btn-primary:disabled { background: #aaa; cursor: not-allowed; }
+    .btn-sm { font-size: 11px; padding: 5px 12px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; color: #1a1a1a; cursor: pointer; font-family: inherit; }
+    .btn-sm:hover { background: #f5f5f3; }
+    .btn-success { font-size: 12px; padding: 8px 18px; border-radius: 8px; border: none; background: #3B6D11; color: #fff; cursor: pointer; font-family: inherit; font-weight: 600; }
+    .btn-success:hover { background: #27500A; }
+    .btn-danger { font-size: 11px; padding: 5px 12px; border-radius: 8px; border: none; background: #A32D2D; color: #fff; cursor: pointer; font-family: inherit; }
+
+    /* ── File Info ── */
+    .file-info { display: flex; align-items: center; gap: 12px; padding: 0.75rem 1rem; background: #f5f5f3; border-radius: 8px; margin-bottom: 1rem; }
+    .file-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .file-icon.csv { background: #E6F1FB; }
+    .file-icon.json { background: #FAEEDA; }
+    .file-name { font-size: 13px; font-weight: 600; color: #1a1a1a; }
+    .file-meta { font-size: 11px; color: #888; margin-top: 2px; }
+
+    /* ── Preview Table ── */
+    .table-wrap { overflow-x: auto; border-radius: 8px; border: 0.5px solid #e0e0de; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { background: #f5f5f3; text-align: left; font-weight: 600; color: #888; padding: 8px 12px; border-bottom: 0.5px solid #e0e0de; white-space: nowrap; font-size: 11px; }
+    td { padding: 7px 12px; color: #1a1a1a; border-bottom: 0.5px solid #e0e0de; white-space: nowrap; font-family: 'Courier New', monospace; font-size: 11px; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafaf8; }
+    .null-val { color: #ccc; font-style: italic; }
+
+    /* ── Column Mapping ── */
+    .mapping-grid { display: grid; grid-template-columns: 1fr 24px 1fr; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .mapping-label { font-size: 12px; color: #1a1a1a; padding: 6px 10px; background: #f5f5f3; border-radius: 6px; font-family: 'Courier New', monospace; }
+    .mapping-arrow { text-align: center; color: #aaa; font-size: 14px; }
+    .mapping-input { height: 32px; border-radius: 6px; border: 0.5px solid #ccc; background: #fff; padding: 0 8px; font-size: 12px; font-family: 'Courier New', monospace; color: #1a1a1a; outline: none; }
+    .mapping-input:focus { border-color: #378ADD; }
+
+    /* ── Target Table ── */
+    .target-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem; }
+    .target-opt { border: 1.5px solid #e0e0de; border-radius: 10px; padding: 1rem; cursor: pointer; transition: all 0.15s; }
+    .target-opt:hover { border-color: #aaa; }
+    .target-opt.active { border-color: #185FA5; background: #E6F1FB; }
+    .target-opt-title { font-size: 13px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
+    .target-opt.active .target-opt-title { color: #0C447C; }
+    .target-opt-sub { font-size: 11px; color: #888; }
+
+    /* ── Progress ── */
+    .progress-wrap { height: 6px; background: #e0e0de; border-radius: 3px; overflow: hidden; margin: 8px 0; }
+    .progress-fill { height: 100%; border-radius: 3px; background: #185FA5; transition: width 0.3s; }
+
+    /* ── Messages ── */
+    .error-box { font-size: 12px; color: #a32d2d; padding: 10px 12px; background: #fcebeb; border-radius: 8px; border: 0.5px solid #f09595; margin-bottom: 1rem; display: none; }
+    .success-box { font-size: 12px; color: #3b6d11; padding: 10px 12px; background: #eaf3de; border-radius: 8px; border: 0.5px solid #97c459; margin-bottom: 1rem; display: none; }
+
+    /* ── History ── */
+    .history-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 0.5px solid #e0e0de; font-size: 12px; }
+    .history-item:last-child { border-bottom: none; }
+    .history-name { font-weight: 600; color: #1a1a1a; }
+    .history-meta { color: #888; margin-top: 2px; font-size: 11px; }
+    .pill { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+    .pill.success { background: #EAF3DE; color: #27500A; }
+    .pill.error { background: #FCEBEB; color: #791F1F; }
+
+    /* ── Select ── */
+    .field { margin-bottom: 1rem; }
+    .field label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 5px; }
+    .field select, .field input { width: 100%; height: 36px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; padding: 0 10px; font-size: 13px; color: #1a1a1a; font-family: inherit; outline: none; }
+    .field select:focus, .field input:focus { border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,0.12); }
+
+    @media (max-width: 900px) {
+      .sidebar { width: 60px; }
+      .brand-name, .nav-section, .avatar-role, .avatar-name { display: none; }
+      .main { margin-left: 60px; }
+      .target-options { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<script>
+  const token = localStorage.getItem('token');
+  const user  = JSON.parse(localStorage.getItem('user') || '{}');
+  if (!token) window.location.href = 'dwms-login.html';
+</script>
+
+<div class="app">
+  <div class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" fill="white" opacity="0.9"/><rect x="9" y="1" width="6" height="6" rx="1" fill="white" opacity="0.6"/><rect x="1" y="9" width="6" height="6" rx="1" fill="white" opacity="0.6"/><rect x="9" y="9" width="6" height="6" rx="1" fill="white" opacity="0.35"/></svg></div>
+      <span class="brand-name">DWMS</span>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-section">Main</div>
+      <a href="dwms-dashboard.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" fill="currentColor"/><rect x="9" y="1" width="6" height="6" rx="1" fill="currentColor" opacity="0.5"/><rect x="1" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.5"/><rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.3"/></svg>Dashboard
+      </a>
+      <a href="dwms-data-resource.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Data sources
+      </a>
+      <a href="dwms-etl-pipelines.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M8 2v4l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/></svg>ETL pipelines
+      </a>
+      <a href="dwms-etl-upload.html" class="nav-item active">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 5l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>ETL upload
+      </a>
+      <a href="dwms-schema-manager.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="12" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>Schema manager
+      </a>
+      <a href="dwms-query-editor.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M5 7h6M5 10h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Query editor
+      </a>
+      <div class="nav-section">Admin</div>
+      <a href="dwms-user-management.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M2 14c0-3 2.7-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Users
+      </a>
+      <a href="dwms-setting.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 2v1.5M8 12.5V14M2 8h1.5M12.5 8H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Settings
+      </a>
+    </div>
+    <div class="sidebar-footer">
+      <div class="avatar-row">
+        <div class="avatar" id="userAvatar">AD</div>
+        <div>
+          <div class="avatar-name" id="userName">Admin</div>
+          <div class="avatar-role" id="userRole">Administrator</div>
+        </div>
+      </div>
+      <div style="margin-top:8px;">
+        <button onclick="logout()" style="width:100%;font-size:11px;padding:5px;border-radius:6px;border:0.5px solid rgba(255,255,255,0.2);background:transparent;color:#B5D4F4;cursor:pointer;">Sign out</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">ETL upload</div>
+        <div class="topbar-sub">Import CSV or JSON files into your data warehouse</div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- Steps -->
+      <div class="steps">
+        <div class="step active" id="step1El">
+          <div class="step-num">1</div>
+          <span>Upload file</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="step" id="step2El">
+          <div class="step-num">2</div>
+          <span>Preview & configure</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="step" id="step3El">
+          <div class="step-num">3</div>
+          <span>Import</span>
+        </div>
+      </div>
+
+      <div class="error-box" id="errorBox"></div>
+      <div class="success-box" id="successBox"></div>
+
+      <!-- ── Step 1: Upload ── -->
+      <div id="stepUpload">
+        <div class="card">
+          <div class="card-title">Upload your file</div>
+          <div class="card-sub">Supported formats: CSV, JSON (max 10MB)</div>
+
+          <div class="upload-zone" id="uploadZone"
+            ondragover="handleDragOver(event)"
+            ondragleave="handleDragLeave(event)"
+            ondrop="handleDrop(event)"
+            onclick="document.getElementById('fileInput').click()">
+            <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M20 8v16M13 15l7-7 7 7" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M6 28v4a2 2 0 002 2h24a2 2 0 002-2v-4" stroke-linecap="round"/>
+            </svg>
+            <div class="upload-title">Drop your file here or click to browse</div>
+            <div class="upload-sub">CSV or JSON files up to 10MB</div>
+            <div class="upload-formats">
+              <span class="format-badge">CSV</span>
+              <span class="format-badge">JSON</span>
+            </div>
+          </div>
+          <input type="file" id="fileInput" accept=".csv,.json" style="display:none" onchange="handleFileSelect(event)" />
+        </div>
+
+        <!-- History -->
+        <div class="card">
+          <div class="card-title">Import history</div>
+          <div class="card-sub">Recent ETL uploads</div>
+          <div id="historyList">
+            <div style="text-align:center;padding:1.5rem;color:#aaa;font-size:12px;">Loading history...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Step 2: Preview & Configure ── -->
+      <div id="stepPreview" style="display:none;">
+        <div class="card">
+          <div class="card-title">File preview</div>
+          <div class="card-sub" id="previewSub">Showing first 10 rows</div>
+
+          <div class="file-info" id="fileInfoBox"></div>
+
+          <div class="table-wrap" id="previewTable"></div>
+
+          <div style="margin-top:1rem;font-size:11px;color:#888;" id="previewMeta"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Target table</div>
+          <div class="card-sub">Where do you want to import this data?</div>
+
+          <div class="target-options">
+            <div class="target-opt active" id="optExisting" onclick="setTargetMode('existing')">
+              <div class="target-opt-title">Existing table</div>
+              <div class="target-opt-sub">Import into a table that already exists in your warehouse</div>
+            </div>
+            <div class="target-opt" id="optNew" onclick="setTargetMode('new')">
+              <div class="target-opt-title">Create new table</div>
+              <div class="target-opt-sub">Automatically create a new table based on your file columns</div>
+            </div>
+          </div>
+
+          <div id="existingTableField" class="field">
+            <label>Select target table</label>
+            <select id="existingTableSelect">
+              <option value="">Choose a table...</option>
+            </select>
+          </div>
+
+          <div id="newTableField" class="field" style="display:none;">
+            <label>New table name</label>
+            <input type="text" id="newTableName" placeholder="e.g. social_media_data" />
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Column mapping</div>
+          <div class="card-sub">Map your file columns to database column names</div>
+          <div id="columnMapping"></div>
+        </div>
+
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button class="btn-sm" onclick="resetUpload()">Back</button>
+          <button class="btn-primary" onclick="startImport()">Import data</button>
+        </div>
+      </div>
+
+      <!-- ── Step 3: Import Result ── -->
+      <div id="stepResult" style="display:none;">
+        <div class="card" style="text-align:center;padding:2.5rem;">
+          <div id="resultIcon" style="font-size:48px;margin-bottom:1rem;">⏳</div>
+          <div id="resultTitle" style="font-size:18px;font-weight:600;color:#1a1a1a;margin-bottom:0.5rem;">Importing...</div>
+          <div id="resultSub" style="font-size:13px;color:#888;margin-bottom:1.5rem;">Please wait while we import your data</div>
+
+          <div class="progress-wrap" id="progressWrap">
+            <div class="progress-fill" id="progressFill" style="width:0%"></div>
+          </div>
+          <div style="font-size:11px;color:#888;margin-top:6px;" id="progressLabel">0%</div>
+
+          <div style="display:flex;gap:8px;justify-content:center;margin-top:1.5rem;" id="resultActions" style="display:none;">
+            <button class="btn-sm" onclick="resetUpload()">Upload another file</button>
+            <button class="btn-primary" onclick="window.location.href='dwms-query-editor.html'">Query this data</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const API        = 'https://dwms-backend-sqix.onrender.com';
+  let previewData  = null;
+  let targetMode   = 'existing';
+
+  /* ── Auth ── */
+  window.onload = function () {
+    if (user.firstName) {
+      const initials = user.firstName[0] + (user.lastName ? user.lastName[0] : '');
+      document.getElementById('userAvatar').textContent = initials.toUpperCase();
+      document.getElementById('userName').textContent   = user.firstName + ' ' + (user.lastName || '');
+      document.getElementById('userRole').textContent   = user.role || 'Viewer';
+    }
+    loadHistory();
+  };
+
+  function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = 'dwms-login.html';
+  }
+
+  /* ── Drag & Drop ── */
+  function handleDragOver(e) {
+    e.preventDefault();
+    document.getElementById('uploadZone').classList.add('dragover');
+  }
+
+  function handleDragLeave(e) {
+    document.getElementById('uploadZone').classList.remove('dragover');
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    document.getElementById('uploadZone').classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) uploadFile(file);
+  }
+
+  function handleFileSelect(e) {
+    const file = e.target.files[0];
+    if (file) uploadFile(file);
+  }
+
+  /* ── Upload & Preview ── */
+  async function uploadFile(file) {
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (ext !== 'csv' && ext !== 'json') {
+      showError('Only CSV and JSON files are allowed.');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      showError('File size exceeds 10MB limit.');
+      return;
+    }
+
+    showError('');
+    setStep(2);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch(`${API}/api/etl/preview`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      });
+
+      const data = await res.json();
+      if (data.error) { showError(data.error); setStep(1); return; }
+
+      previewData = data;
+      renderPreview(data);
+      document.getElementById('stepUpload').style.display   = 'none';
+      document.getElementById('stepPreview').style.display  = 'block';
+
+    } catch (err) {
+      showError('Upload failed. Make sure the backend is running.');
+      setStep(1);
+    }
+  }
+
+  /* ── Render Preview ── */
+  function renderPreview(data) {
+    const ext = data.fileName.split('.').pop().toLowerCase();
+
+    document.getElementById('fileInfoBox').innerHTML = `
+      <div class="file-icon ${ext}">${ext === 'csv' ? '📊' : '📋'}</div>
+      <div>
+        <div class="file-name">${data.fileName}</div>
+        <div class="file-meta">${data.totalRows.toLocaleString()} rows · ${data.columns.length} columns</div>
+      </div>
+    `;
+
+    // Preview table
+    const cols = data.columns.map(c => c.clean);
+    let tableHTML = `<table><thead><tr>`;
+    cols.forEach(c => { tableHTML += `<th>${c}</th>`; });
+    tableHTML += `</tr></thead><tbody>`;
+    data.preview.forEach(row => {
+      tableHTML += `<tr>`;
+      cols.forEach(c => {
+        const val = row[c];
+        tableHTML += `<td>${val === null || val === undefined || val === '' ? '<span class="null-val">null</span>' : val}</td>`;
+      });
+      tableHTML += `</tr>`;
+    });
+    tableHTML += `</tbody></table>`;
+    document.getElementById('previewTable').innerHTML = tableHTML;
+
+    document.getElementById('previewMeta').textContent =
+      `Showing ${Math.min(10, data.totalRows)} of ${data.totalRows.toLocaleString()} rows`;
+
+    // Populate existing tables dropdown
+    const select = document.getElementById('existingTableSelect');
+    select.innerHTML = '<option value="">Choose a table...</option>';
+    data.existingTables.forEach(t => {
+      select.innerHTML += `<option value="${t}">${t}</option>`;
+    });
+
+    // Column mapping
+    let mappingHTML = '';
+    data.columns.forEach(col => {
+      mappingHTML += `
+        <div class="mapping-grid">
+          <div class="mapping-label">${col.original}</div>
+          <div class="mapping-arrow">→</div>
+          <input class="mapping-input" id="map_${col.original}" value="${col.clean}" placeholder="column name" />
+        </div>
+      `;
+    });
+    document.getElementById('columnMapping').innerHTML = mappingHTML;
+  }
+
+  /* ── Target Mode ── */
+  function setTargetMode(mode) {
+    targetMode = mode;
+    document.getElementById('optExisting').classList.toggle('active', mode === 'existing');
+    document.getElementById('optNew').classList.toggle('active', mode === 'new');
+    document.getElementById('existingTableField').style.display = mode === 'existing' ? 'block' : 'none';
+    document.getElementById('newTableField').style.display      = mode === 'new'      ? 'block' : 'none';
+  }
+
+  /* ── Start Import ── */
+  async function startImport() {
+    let targetTable = '';
+    let createNew   = false;
+
+    if (targetMode === 'existing') {
+      targetTable = document.getElementById('existingTableSelect').value;
+      if (!targetTable) { showError('Please select a target table.'); return; }
+    } else {
+      targetTable = document.getElementById('newTableName').value.trim()
+        .toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+      if (!targetTable) { showError('Please enter a table name.'); return; }
+      createNew = true;
+    }
+
+    // Build column mapping
+    const columnMapping = {};
+    previewData.columns.forEach(col => {
+      const el = document.getElementById(`map_${col.original}`);
+      if (el) columnMapping[col.original] = el.value.trim() || col.clean;
+    });
+
+    showError('');
+    document.getElementById('stepPreview').style.display = 'none';
+    document.getElementById('stepResult').style.display  = 'block';
+    setStep(3);
+    animateProgress();
+
+    try {
+      const res = await fetch(`${API}/api/etl/import`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          fileId:        previewData.fileId,
+          fileName:      previewData.fileName,
+          targetTable,
+          createNew,
+          columnMapping,
+        })
+      });
+
+      const data = await res.json();
+      stopProgress();
+
+      if (data.error) {
+        document.getElementById('resultIcon').textContent  = '❌';
+        document.getElementById('resultTitle').textContent = 'Import failed';
+        document.getElementById('resultSub').textContent   = data.error;
+      } else {
+        document.getElementById('resultIcon').textContent  = '✅';
+        document.getElementById('resultTitle').textContent = 'Import successful!';
+        document.getElementById('resultSub').textContent   = data.message;
+        document.getElementById('progressFill').style.width = '100%';
+        document.getElementById('progressLabel').textContent = '100%';
+      }
+      document.getElementById('resultActions').style.display = 'flex';
+
+    } catch (err) {
+      stopProgress();
+      document.getElementById('resultIcon').textContent  = '❌';
+      document.getElementById('resultTitle').textContent = 'Import failed';
+      document.getElementById('resultSub').textContent   = 'Server error. Please try again.';
+      document.getElementById('resultActions').style.display = 'flex';
+    }
+  }
+
+  /* ── Progress animation ── */
+  let progressInterval;
+  function animateProgress() {
+    let pct = 0;
+    progressInterval = setInterval(() => {
+      pct = Math.min(pct + Math.random() * 8, 90);
+      document.getElementById('progressFill').style.width  = pct + '%';
+      document.getElementById('progressLabel').textContent = Math.round(pct) + '%';
+    }, 300);
+  }
+
+  function stopProgress() {
+    clearInterval(progressInterval);
+  }
+
+  /* ── Reset ── */
+  function resetUpload() {
+    previewData = null;
+    document.getElementById('fileInput').value = '';
+    document.getElementById('stepUpload').style.display  = 'block';
+    document.getElementById('stepPreview').style.display = 'none';
+    document.getElementById('stepResult').style.display  = 'none';
+    document.getElementById('progressFill').style.width  = '0%';
+    document.getElementById('progressLabel').textContent = '0%';
+    document.getElementById('resultActions').style.display = 'none';
+    showError('');
+    setStep(1);
+    loadHistory();
+  }
+
+  /* ── Load History ── */
+  async function loadHistory() {
+    try {
+      const res  = await fetch(`${API}/api/etl/history`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      const list = document.getElementById('historyList');
+
+      if (!data.length) {
+        list.innerHTML = '<div style="text-align:center;padding:1.5rem;color:#aaa;font-size:12px;">No imports yet</div>';
+        return;
+      }
+
+      list.innerHTML = data.map(h => `
+        <div class="history-item">
+          <div>
+            <div class="history-name">${h.name}</div>
+            <div class="history-meta">${h.source} · ${h.records} rows · ${h.last_run ? new Date(h.last_run).toLocaleString() : '—'}</div>
+          </div>
+          <span class="pill ${h.status === 'success' ? 'success' : 'error'}">${h.status}</span>
+        </div>
+      `).join('');
+    } catch (err) {
+      document.getElementById('historyList').innerHTML =
+        '<div style="text-align:center;padding:1.5rem;color:#aaa;font-size:12px;">Could not load history</div>';
+    }
+  }
+
+  /* ── Steps UI ── */
+  function setStep(n) {
+    [1,2,3].forEach(i => {
+      const el = document.getElementById(`step${i}El`);
+      el.className = 'step' + (i < n ? ' done' : i === n ? ' active' : '');
+    });
+  }
+
+  /* ── Helpers ── */
+  function showError(msg) {
+    const box = document.getElementById('errorBox');
+    box.textContent    = msg;
+    box.style.display  = msg ? 'block' : 'none';
+  }
+</script>
+</body>
+</html>
