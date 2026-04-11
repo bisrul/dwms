@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DWMS — YouTube ETL</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; }
+    .app { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar { width: 200px; background: #0C447C; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; }
+    .sidebar-brand { display: flex; align-items: center; gap: 8px; padding: 1.25rem 1rem; border-bottom: 0.5px solid rgba(255,255,255,0.1); }
+    .brand-icon { width: 28px; height: 28px; background: #378ADD; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+    .brand-icon svg { width: 16px; height: 16px; }
+    .brand-name { font-size: 13px; font-weight: 600; color: #fff; }
+    .sidebar-nav { flex: 1; padding: 0.75rem 0; overflow-y: auto; }
+    .nav-section { font-size: 10px; color: #85B7EB; padding: 0.75rem 1rem 0.25rem; letter-spacing: 0.8px; text-transform: uppercase; }
+    .nav-item { display: flex; align-items: center; gap: 8px; padding: 0.5rem 1rem; font-size: 13px; color: #B5D4F4; cursor: pointer; text-decoration: none; transition: background 0.15s; }
+    .nav-item:hover { background: rgba(255,255,255,0.07); }
+    .nav-item.active { background: rgba(255,255,255,0.12); color: #fff; border-right: 2px solid #378ADD; }
+    .nav-item svg { width: 15px; height: 15px; opacity: 0.8; flex-shrink: 0; }
+    .sidebar-footer { padding: 1rem; border-top: 0.5px solid rgba(255,255,255,0.1); }
+    .avatar-row { display: flex; align-items: center; gap: 8px; }
+    .avatar { width: 28px; height: 28px; border-radius: 50%; background: #378ADD; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #fff; }
+    .avatar-name { font-size: 12px; color: #fff; font-weight: 600; }
+    .avatar-role { font-size: 10px; color: #85B7EB; }
+
+    /* ── Main ── */
+    .main { flex: 1; margin-left: 200px; display: flex; flex-direction: column; min-height: 100vh; }
+    .topbar { background: #fff; border-bottom: 0.5px solid #e0e0de; padding: 0.75rem 1.5rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+    .topbar-title { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+    .topbar-sub { font-size: 12px; color: #888; margin-top: 1px; }
+    .content { padding: 1.5rem; }
+
+    /* ── Search Bar ── */
+    .search-card { background: #fff; border: 0.5px solid #e0e0de; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+    .search-title { font-size: 14px; font-weight: 600; color: #1a1a1a; margin-bottom: 0.25rem; }
+    .search-sub { font-size: 12px; color: #888; margin-bottom: 1rem; }
+    .search-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .search-input { flex: 1; height: 38px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; padding: 0 12px; font-size: 13px; font-family: inherit; outline: none; min-width: 200px; }
+    .search-input:focus { border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,0.12); }
+    .num-input { width: 80px; height: 38px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; padding: 0 10px; font-size: 13px; font-family: inherit; outline: none; }
+    .btn-primary { font-size: 12px; padding: 8px 18px; border-radius: 8px; border: none; background: #E24B4A; color: #fff; cursor: pointer; font-family: inherit; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+    .btn-primary:hover { background: #c03030; }
+    .btn-primary:disabled { background: #aaa; cursor: not-allowed; }
+    .btn-sm { font-size: 11px; padding: 5px 12px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; color: #1a1a1a; cursor: pointer; font-family: inherit; }
+    .btn-sm:hover { background: #f5f5f3; }
+    .btn-danger { font-size: 11px; padding: 5px 12px; border-radius: 8px; border: none; background: #A32D2D; color: #fff; cursor: pointer; font-family: inherit; }
+
+    /* ── KPI ── */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1rem; }
+    .kpi-card { background: #fff; border: 0.5px solid #e0e0de; border-radius: 12px; padding: 1rem; }
+    .kpi-label { font-size: 11px; color: #888; margin-bottom: 4px; }
+    .kpi-value { font-size: 20px; font-weight: 600; color: #1a1a1a; }
+    .kpi-sub { font-size: 11px; color: #888; margin-top: 3px; }
+
+    /* ── Charts ── */
+    .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem; }
+    .chart-card { background: #fff; border: 0.5px solid #e0e0de; border-radius: 12px; padding: 1rem; }
+    .chart-title { font-size: 13px; font-weight: 600; color: #1a1a1a; margin-bottom: 0.75rem; }
+
+    /* ── Video Cards ── */
+    .videos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1rem; }
+    .video-card { background: #fff; border: 0.5px solid #e0e0de; border-radius: 12px; overflow: hidden; transition: border-color 0.15s; }
+    .video-card:hover { border-color: #aaa; }
+    .video-thumb { width: 100%; aspect-ratio: 16/9; object-fit: cover; background: #f5f5f3; display: block; }
+    .video-thumb-placeholder { width: 100%; aspect-ratio: 16/9; background: #e0e0de; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 24px; }
+    .video-body { padding: 0.75rem; }
+    .video-title { font-size: 12px; font-weight: 600; color: #1a1a1a; line-height: 1.4; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .video-channel { font-size: 11px; color: #888; margin-bottom: 6px; }
+    .video-stats { display: flex; gap: 10px; }
+    .video-stat { font-size: 10px; color: #888; display: flex; align-items: center; gap: 3px; }
+    .video-stat span { color: #1a1a1a; font-weight: 600; }
+
+    /* ── Table ── */
+    .table-card { background: #fff; border: 0.5px solid #e0e0de; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
+    .table-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { text-align: left; font-weight: 600; color: #888; padding: 6px 10px; border-bottom: 0.5px solid #e0e0de; white-space: nowrap; font-size: 11px; }
+    td { padding: 7px 10px; color: #1a1a1a; border-bottom: 0.5px solid #e0e0de; white-space: nowrap; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafaf8; }
+
+    /* ── Messages ── */
+    .error-box { font-size: 12px; color: #a32d2d; padding: 10px 12px; background: #fcebeb; border-radius: 8px; border: 0.5px solid #f09595; margin-bottom: 1rem; display: none; }
+    .success-box { font-size: 12px; color: #3b6d11; padding: 10px 12px; background: #eaf3de; border-radius: 8px; border: 0.5px solid #97c459; margin-bottom: 1rem; display: none; }
+    .loading { text-align: center; padding: 2rem; color: #888; font-size: 13px; }
+
+    /* ── Tabs ── */
+    .tab-row { display: flex; gap: 6px; margin-bottom: 1rem; }
+    .tab { font-size: 12px; padding: 5px 14px; border-radius: 20px; border: 0.5px solid #ccc; background: #fff; color: #888; cursor: pointer; font-family: inherit; }
+    .tab.active { background: #E24B4A; color: #fff; border-color: #E24B4A; }
+
+    /* ── YT badge ── */
+    .yt-badge { display: inline-flex; align-items: center; gap: 5px; background: #FCEBEB; color: #A32D2D; font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; margin-bottom: 1rem; }
+
+    @media (max-width: 1100px) { .videos-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 900px) {
+      .sidebar { width: 60px; }
+      .brand-name, .nav-section, .avatar-role, .avatar-name { display: none; }
+      .main { margin-left: 60px; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .charts-row { grid-template-columns: 1fr; }
+      .videos-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<script>
+  const token = localStorage.getItem('token');
+  const user  = JSON.parse(localStorage.getItem('user') || '{}');
+  if (!token) window.location.href = 'dwms-login.html';
+</script>
+
+<div class="app">
+  <div class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" fill="white" opacity="0.9"/><rect x="9" y="1" width="6" height="6" rx="1" fill="white" opacity="0.6"/><rect x="1" y="9" width="6" height="6" rx="1" fill="white" opacity="0.6"/><rect x="9" y="9" width="6" height="6" rx="1" fill="white" opacity="0.35"/></svg></div>
+      <span class="brand-name">DWMS</span>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-section">Main</div>
+      <a href="dwms-dashboard.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" fill="currentColor"/><rect x="9" y="1" width="6" height="6" rx="1" fill="currentColor" opacity="0.5"/><rect x="1" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.5"/><rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.3"/></svg>Dashboard
+      </a>
+      <a href="dwms-data-resource.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Data sources
+      </a>
+      <a href="dwms-etl-pipelines.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M8 2v4l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/></svg>ETL pipelines
+      </a>
+      <a href="dwms-etl-upload.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 5l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>ETL upload
+      </a>
+      <a href="dwms-youtube-etl.html" class="nav-item active">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 6l5 2.5L6 11V6z" fill="currentColor"/></svg>YouTube ETL
+      </a>
+      <a href="dwms-schema-manager.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="12" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>Schema manager
+      </a>
+      <a href="dwms-query-editor.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M5 7h6M5 10h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Query editor
+      </a>
+      <div class="nav-section">Admin</div>
+      <a href="dwms-user-management.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M2 14c0-3 2.7-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Users
+      </a>
+      <a href="dwms-setting.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 2v1.5M8 12.5V14M2 8h1.5M12.5 8H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Settings
+      </a>
+    </div>
+    <div class="sidebar-footer">
+      <div class="avatar-row">
+        <div class="avatar" id="userAvatar">AD</div>
+        <div>
+          <div class="avatar-name" id="userName">Admin</div>
+          <div class="avatar-role" id="userRole">Administrator</div>
+        </div>
+      </div>
+      <div style="margin-top:8px;">
+        <button onclick="logout()" style="width:100%;font-size:11px;padding:5px;border-radius:6px;border:0.5px solid rgba(255,255,255,0.2);background:transparent;color:#B5D4F4;cursor:pointer;">Sign out</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">YouTube ETL</div>
+        <div class="topbar-sub">Extract, transform and load YouTube data into your warehouse</div>
+      </div>
+      <button class="btn-danger" onclick="clearAllVideos()">Clear all data</button>
+    </div>
+
+    <div class="content">
+
+      <div class="yt-badge">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="10" rx="2" fill="#E24B4A"/><path d="M6 6l5 2.5L6 11V6z" fill="white"/></svg>
+        YouTube Data API v3
+      </div>
+
+      <!-- Search -->
+      <div class="search-card">
+        <div class="search-title">Search & import videos</div>
+        <div class="search-sub">Enter a keyword to search YouTube and save results to your database</div>
+        <div class="search-row">
+          <input class="search-input" type="text" id="searchKeyword"
+            placeholder="e.g. machine learning, data science, python tutorial..."
+            onkeydown="if(event.key==='Enter') searchVideos()" />
+          <input class="num-input" type="number" id="maxResults" value="10" min="1" max="50" title="Max results (1-50)" />
+          <button class="btn-primary" id="searchBtn" onclick="searchVideos()">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="white" stroke-width="1.5"/><path d="M10 10l3 3" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Search & import
+          </button>
+        </div>
+        <div style="margin-top:8px;font-size:11px;color:#888;">
+          Max 50 results per search · Data saved automatically to database
+        </div>
+      </div>
+
+      <div class="error-box"   id="errorBox"></div>
+      <div class="success-box" id="successBox"></div>
+
+      <!-- KPI Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Total videos</div>
+          <div class="kpi-value" id="kpiVideos">—</div>
+          <div class="kpi-sub">in database</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Total views</div>
+          <div class="kpi-value" id="kpiViews">—</div>
+          <div class="kpi-sub">across all videos</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Total likes</div>
+          <div class="kpi-value" id="kpiLikes">—</div>
+          <div class="kpi-sub">across all videos</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Keywords tracked</div>
+          <div class="kpi-value" id="kpiKeywords">—</div>
+          <div class="kpi-sub">unique keywords</div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-title">Views by keyword</div>
+          <div style="position:relative;height:220px;">
+            <canvas id="keywordChart"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Top 5 videos by views</div>
+          <div style="position:relative;height:220px;">
+            <canvas id="topVideosChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tab-row">
+        <button class="tab active" onclick="switchTab('cards', this)">Video cards</button>
+        <button class="tab" onclick="switchTab('table', this)">Data table</button>
+      </div>
+
+      <!-- Video Cards -->
+      <div id="tabCards">
+        <div class="videos-grid" id="videosGrid">
+          <div class="loading" style="grid-column:1/-1;">Search for videos to see results here</div>
+        </div>
+      </div>
+
+      <!-- Data Table -->
+      <div id="tabTable" style="display:none;">
+        <div class="table-card">
+          <div class="table-header">
+            <div style="font-size:13px;font-weight:600;color:#1a1a1a;">All videos in database</div>
+            <div style="display:flex;gap:6px;">
+              <input type="text" id="filterKeyword" placeholder="Filter by keyword..."
+                style="height:28px;border-radius:6px;border:0.5px solid #ccc;padding:0 8px;font-size:11px;font-family:inherit;outline:none;"
+                oninput="loadTable()" />
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Channel</th>
+                  <th>Views</th>
+                  <th>Likes</th>
+                  <th>Comments</th>
+                  <th>Keyword</th>
+                  <th>Published</th>
+                </tr>
+              </thead>
+              <tbody id="videoTableBody">
+                <tr><td colspan="7" style="text-align:center;padding:2rem;color:#aaa;">No data yet</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = 'https://dwms-backend-sqix.onrender.com';
+  let keywordChart   = null;
+  let topVideosChart = null;
+  let currentTab     = 'cards';
+
+  window.onload = function () {
+    if (user.firstName) {
+      const initials = user.firstName[0] + (user.lastName ? user.lastName[0] : '');
+      document.getElementById('userAvatar').textContent = initials.toUpperCase();
+      document.getElementById('userName').textContent   = user.firstName + ' ' + (user.lastName || '');
+      document.getElementById('userRole').textContent   = user.role || 'Viewer';
+    }
+    loadStats();
+    loadVideos();
+  };
+
+  function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = 'dwms-login.html';
+  }
+
+  /* ── Search ── */
+  async function searchVideos() {
+    const keyword    = document.getElementById('searchKeyword').value.trim();
+    const maxResults = parseInt(document.getElementById('maxResults').value) || 10;
+
+    if (!keyword) { showError('Please enter a keyword.'); return; }
+
+    const btn = document.getElementById('searchBtn');
+    btn.disabled    = true;
+    btn.textContent = 'Searching...';
+    showError('');
+    showSuccess('');
+
+    try {
+      const res  = await fetch(`${API}/api/youtube/search`, {
+        method:  'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ keyword, maxResults }),
+      });
+      const data = await res.json();
+
+      if (data.error) { showError(data.error); return; }
+
+      showSuccess(`${data.message}`);
+      loadStats();
+      loadVideos();
+      if (currentTab === 'table') loadTable();
+
+    } catch (err) {
+      showError('Search failed. Check your API key and backend.');
+    } finally {
+      btn.disabled    = false;
+      btn.innerHTML   = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="white" stroke-width="1.5"/><path d="M10 10l3 3" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg> Search & import`;
+    }
+  }
+
+  /* ── Load Stats ── */
+  async function loadStats() {
+    try {
+      const res  = await fetch(`${API}/api/youtube/stats`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.error) return;
+
+      const t = data.totals;
+      document.getElementById('kpiVideos').textContent   = parseInt(t.total_videos  || 0).toLocaleString();
+      document.getElementById('kpiViews').textContent    = formatNum(parseInt(t.total_views   || 0));
+      document.getElementById('kpiLikes').textContent    = formatNum(parseInt(t.total_likes   || 0));
+      document.getElementById('kpiKeywords').textContent = parseInt(t.total_keywords || 0).toLocaleString();
+
+      renderKeywordChart(data.byKeyword  || []);
+      renderTopVideosChart(data.topVideos || []);
+
+    } catch (err) { console.error('Stats error:', err); }
+  }
+
+  /* ── Load Videos (cards) ── */
+  async function loadVideos() {
+    try {
+      const res  = await fetch(`${API}/api/youtube/videos?limit=12`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.error) return;
+
+      const grid = document.getElementById('videosGrid');
+      if (!data.videos.length) {
+        grid.innerHTML = `<div class="loading" style="grid-column:1/-1;">Search for videos to see results here</div>`;
+        return;
+      }
+
+      grid.innerHTML = data.videos.map(v => `
+        <div class="video-card">
+          ${v.thumbnail
+            ? `<img class="video-thumb" src="${v.thumbnail}" alt="${v.title}" loading="lazy" onerror="this.style.display='none'">`
+            : `<div class="video-thumb-placeholder">▶</div>`
+          }
+          <div class="video-body">
+            <div class="video-title">${v.title}</div>
+            <div class="video-channel">${v.channel_title}</div>
+            <div class="video-stats">
+              <div class="video-stat">👁 <span>${formatNum(v.view_count)}</span></div>
+              <div class="video-stat">👍 <span>${formatNum(v.like_count)}</span></div>
+              <div class="video-stat">💬 <span>${formatNum(v.comment_count)}</span></div>
+            </div>
+            <div style="margin-top:6px;">
+              <span style="font-size:10px;padding:2px 7px;border-radius:20px;background:#FCEBEB;color:#A32D2D;font-weight:600;">${v.keyword}</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+    } catch (err) { console.error('Videos error:', err); }
+  }
+
+  /* ── Load Table ── */
+  async function loadTable() {
+    const keyword = document.getElementById('filterKeyword')?.value.trim() || '';
+    try {
+      const res  = await fetch(`${API}/api/youtube/videos?limit=50${keyword ? '&keyword='+encodeURIComponent(keyword) : ''}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.error) return;
+
+      const tbody = document.getElementById('videoTableBody');
+      if (!data.videos.length) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;color:#aaa;">No videos found</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.videos.map(v => `
+        <tr>
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;">
+            <a href="https://youtube.com/watch?v=${v.video_id}" target="_blank"
+               style="color:#185FA5;text-decoration:none;">${v.title}</a>
+          </td>
+          <td>${v.channel_title}</td>
+          <td>${formatNum(v.view_count)}</td>
+          <td>${formatNum(v.like_count)}</td>
+          <td>${formatNum(v.comment_count)}</td>
+          <td><span style="font-size:10px;padding:2px 7px;border-radius:20px;background:#FCEBEB;color:#A32D2D;font-weight:600;">${v.keyword}</span></td>
+          <td>${v.published_at ? new Date(v.published_at).toLocaleDateString() : '—'}</td>
+        </tr>
+      `).join('');
+
+    } catch (err) { console.error('Table error:', err); }
+  }
+
+  /* ── Charts ── */
+  function renderKeywordChart(byKeyword) {
+    if (keywordChart) { keywordChart.destroy(); keywordChart = null; }
+    if (!byKeyword.length) return;
+
+    keywordChart = new Chart(document.getElementById('keywordChart'), {
+      type: 'bar',
+      data: {
+        labels:   byKeyword.map(k => k.keyword.length > 15 ? k.keyword.slice(0,15)+'...' : k.keyword),
+        datasets: [{
+          label: 'Total views',
+          data:  byKeyword.map(k => parseInt(k.total_views || 0)),
+          backgroundColor: '#E24B4A',
+          borderRadius: 4,
+          barPercentage: 0.6,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+          y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 10 }, callback: v => formatNum(v) } }
+        }
+      }
+    });
+  }
+
+  function renderTopVideosChart(topVideos) {
+    if (topVideosChart) { topVideosChart.destroy(); topVideosChart = null; }
+    if (!topVideos.length) return;
+
+    topVideosChart = new Chart(document.getElementById('topVideosChart'), {
+      type: 'bar',
+      data: {
+        labels:   topVideos.map(v => v.title.length > 20 ? v.title.slice(0,20)+'...' : v.title),
+        datasets: [{
+          label: 'Views',
+          data:  topVideos.map(v => parseInt(v.view_count || 0)),
+          backgroundColor: '#185FA5',
+          borderRadius: 4,
+          barPercentage: 0.6,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 10 }, callback: v => formatNum(v) } },
+          y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+        }
+      }
+    });
+  }
+
+  /* ── Tab switch ── */
+  function switchTab(tab, btn) {
+    currentTab = tab;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tabCards').style.display = tab === 'cards' ? 'block' : 'none';
+    document.getElementById('tabTable').style.display = tab === 'table' ? 'block' : 'none';
+    if (tab === 'table') loadTable();
+  }
+
+  /* ── Clear all ── */
+  async function clearAllVideos() {
+    if (!confirm('Delete all YouTube data from database? This cannot be undone.')) return;
+    try {
+      const res = await fetch(`${API}/api/youtube/videos`, {
+        method:  'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      showSuccess(data.message);
+      loadStats();
+      loadVideos();
+    } catch (err) { showError('Failed to clear data.'); }
+  }
+
+  /* ── Helpers ── */
+  function formatNum(n) {
+    n = parseInt(n || 0);
+    if (n >= 1e9) return (n/1e9).toFixed(1) + 'B';
+    if (n >= 1e6) return (n/1e6).toFixed(1) + 'M';
+    if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
+    return n.toLocaleString();
+  }
+
+  function showError(msg) {
+    const b = document.getElementById('errorBox');
+    b.textContent = msg; b.style.display = msg ? 'block' : 'none';
+  }
+
+  function showSuccess(msg) {
+    const b = document.getElementById('successBox');
+    b.textContent = msg; b.style.display = msg ? 'block' : 'none';
+  }
+</script>
+</body>
+</html>
