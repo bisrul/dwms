@@ -1,11 +1,9 @@
-// server.js
 const express = require('express');
 const cors    = require('cors');
 require('dotenv').config();
 
 const app = express();
 
-// ← Allow your frontend domain
 app.use(cors({
   origin: [
     'https://dwms-frontend.onrender.com',
@@ -19,15 +17,21 @@ app.use(cors({
 }));
 
 app.use(express.json());
+app.use(express.static('../frontend'));
 
-// Routes
-app.use('/api/auth', require('./routes/auth'));
+// ── Routes ──────────────────────────────────────────
+app.use('/api/auth',      require('./routes/auth'));
+app.use('/api/dashboard', require('./routes/dashboard'));
+app.use('/api/pipelines', require('./routes/pipelines'));
+app.use('/api/schema',    require('./routes/schema'));
+app.use('/api/query',     require('./routes/query'));
+app.use('/api/users',     require('./routes/users'));
+app.use('/api/etl',       require('./routes/etl'));
+app.use('/api/youtube',   require('./routes/youtube'));
 
-const etlRoutes = require('./routes/etl');
-app.use('/api/etl', etlRoutes);
-
-const youtubeRoutes = require('./routes/youtube');
-app.use('/api/youtube', youtubeRoutes);
+app.get('/', (req, res) => {
+  res.json({ message: 'DWMS API is running!' });
+});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
