@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DWMS — Data Sources</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; }
+    .app { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar { width: 200px; background: #0C447C; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; }
+    .sidebar-brand { display: flex; align-items: center; gap: 8px; padding: 1.25rem 1rem; border-bottom: 0.5px solid rgba(255,255,255,0.1); }
+    .brand-icon { width: 28px; height: 28px; background: #378ADD; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+    .brand-icon svg { width: 16px; height: 16px; }
+    .brand-name { font-size: 13px; font-weight: 600; color: #fff; }
+    .sidebar-nav { flex: 1; padding: 0.75rem 0; overflow-y: auto; }
+    .nav-section { font-size: 10px; color: #85B7EB; padding: 0.75rem 1rem 0.25rem; letter-spacing: 0.8px; text-transform: uppercase; }
+    .nav-item { display: flex; align-items: center; gap: 8px; padding: 0.5rem 1rem; font-size: 13px; color: #B5D4F4; cursor: pointer; text-decoration: none; transition: background 0.15s; }
+    .nav-item:hover { background: rgba(255,255,255,0.07); }
+    .nav-item.active { background: rgba(255,255,255,0.12); color: #fff; border-right: 2px solid #378ADD; }
+    .nav-item svg { width: 15px; height: 15px; opacity: 0.8; flex-shrink: 0; }
+    .sidebar-footer { padding: 1rem; border-top: 0.5px solid rgba(255,255,255,0.1); }
+    .avatar-row { display: flex; align-items: center; gap: 8px; }
+    .avatar { width: 28px; height: 28px; border-radius: 50%; background: #378ADD; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #fff; }
+    .avatar-name { font-size: 12px; color: #fff; font-weight: 600; }
+    .avatar-role { font-size: 10px; color: #85B7EB; }
+
+    /* ── Main ── */
+    .main { flex: 1; margin-left: 200px; display: flex; flex-direction: column; min-height: 100vh; }
+    .topbar { background: #fff; border-bottom: 0.5px solid #e0e0de; padding: 0.75rem 1.5rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+    .topbar-title { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+    .topbar-sub { font-size: 12px; color: #888; margin-top: 1px; }
+    .topbar-right { display: flex; gap: 8px; align-items: center; }
+    .content { padding: 1.5rem; }
+
+    /* ── Buttons ── */
+    .btn-primary { font-size: 12px; padding: 7px 16px; border-radius: 8px; border: none; background: #185FA5; color: #fff; cursor: pointer; font-family: inherit; font-weight: 600; transition: background 0.15s; }
+    .btn-primary:hover { background: #0C447C; }
+    .btn-sm { font-size: 11px; padding: 4px 10px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; color: #1a1a1a; cursor: pointer; font-family: inherit; transition: background 0.15s; }
+    .btn-sm:hover { background: #f5f5f3; }
+    .btn-danger { font-size: 11px; padding: 4px 10px; border-radius: 8px; border: none; background: #A32D2D; color: #fff; cursor: pointer; font-family: inherit; }
+    .btn-danger:hover { background: #791F1F; }
+
+    /* ── KPI ── */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+    .kpi-card { background: #fff; border: 0.5px solid #e0e0de; border-radius: 12px; padding: 1rem; }
+    .kpi-label { font-size: 11px; color: #888; margin-bottom: 4px; }
+    .kpi-value { font-size: 22px; font-weight: 600; color: #1a1a1a; }
+    .kpi-sub { font-size: 11px; color: #888; margin-top: 3px; }
+
+    /* ── Section header ── */
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+    .section-title { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+    .section-sub { font-size: 12px; color: #888; margin-top: 2px; }
+
+    /* ── Connector Catalog ── */
+    .catalog-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 2rem; }
+    .catalog-card { background: #fff; border: 0.5px solid #e0e0de; border-radius: 12px; padding: 1.25rem; cursor: pointer; transition: all 0.15s; position: relative; }
+    .catalog-card:hover { border-color: #185FA5; }
+    .catalog-card.connected { border-left: 3px solid #3B6D11; border-radius: 0 12px 12px 0; }
+    .catalog-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 0.75rem; }
+    .connector-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+    .connector-name { font-size: 13px; font-weight: 600; color: #1a1a1a; margin-bottom: 3px; }
+    .connector-type { font-size: 11px; color: #888; }
+    .connector-desc { font-size: 11px; color: #888; line-height: 1.5; margin-bottom: 0.75rem; }
+    .connector-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 0.75rem; }
+    .meta-pill { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+    .meta-pill.free { background: #EAF3DE; color: #27500A; }
+    .meta-pill.paid { background: #FAEEDA; color: #633806; }
+    .meta-pill.api { background: #E6F1FB; color: #0C447C; }
+    .meta-pill.file { background: #F0EAF8; color: #4A1A7A; }
+    .meta-pill.db { background: #E1F5EE; color: #085041; }
+    .connector-footer { display: flex; align-items: center; justify-content: space-between; }
+    .status-pill { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+    .status-pill.connected { background: #EAF3DE; color: #27500A; }
+    .status-pill.not-connected { background: #F1EFE8; color: #5F5E5A; }
+    .status-pill.syncing { background: #E6F1FB; color: #0C447C; }
+    .status-pill.error { background: #FCEBEB; color: #791F1F; }
+
+    /* ── Active Connections ── */
+    .connections-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 2rem; }
+    .connection-card { background: #fff; border: 0.5px solid #e0e0de; border-radius: 12px; padding: 1rem; display: flex; align-items: center; gap: 12px; }
+    .connection-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+    .connection-info { flex: 1; min-width: 0; }
+    .connection-name { font-size: 13px; font-weight: 600; color: #1a1a1a; }
+    .connection-meta { font-size: 11px; color: #888; margin-top: 2px; }
+    .connection-stats { display: flex; gap: 16px; flex-shrink: 0; }
+    .conn-stat { text-align: right; }
+    .conn-stat-value { font-size: 13px; font-weight: 600; color: #1a1a1a; }
+    .conn-stat-label { font-size: 10px; color: #888; }
+    .connection-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .sync-progress { height: 3px; background: #e0e0de; border-radius: 2px; margin-top: 6px; overflow: hidden; }
+    .sync-progress-fill { height: 100%; border-radius: 2px; background: #185FA5; transition: width 0.5s; }
+
+    /* ── Modal ── */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: #fff; border-radius: 14px; padding: 1.5rem; width: 500px; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
+    .modal-title { font-size: 16px; font-weight: 600; color: #1a1a1a; margin-bottom: 0.25rem; }
+    .modal-sub { font-size: 12px; color: #888; margin-bottom: 1.5rem; }
+    .modal-icon { width: 52px; height: 52px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 26px; margin-bottom: 1rem; }
+    .field { margin-bottom: 0.9rem; }
+    .field label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 5px; }
+    .field input, .field select { width: 100%; height: 38px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; padding: 0 10px; font-size: 13px; color: #1a1a1a; font-family: inherit; outline: none; transition: border-color 0.15s; }
+    .field input:focus, .field select:focus { border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,0.12); }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1.5rem; }
+    .error-box { font-size: 12px; color: #a32d2d; padding: 8px 10px; background: #fcebeb; border-radius: 8px; border: 0.5px solid #f09595; margin-bottom: 1rem; display: none; }
+    .success-box { font-size: 12px; color: #3b6d11; padding: 8px 10px; background: #eaf3de; border-radius: 8px; border: 0.5px solid #97c459; margin-bottom: 1rem; display: none; }
+
+    /* ── Toast ── */
+    .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #1a1a1a; color: #fff; font-size: 12px; padding: 10px 16px; border-radius: 10px; z-index: 200; display: none; align-items: center; gap: 8px; }
+    .toast.show { display: flex; }
+
+    /* ── Empty state ── */
+    .empty-state { text-align: center; padding: 3rem; color: #aaa; font-size: 13px; background: #fff; border: 0.5px solid #e0e0de; border-radius: 12px; }
+
+    @media (max-width: 900px) {
+      .sidebar { width: 60px; }
+      .brand-name, .nav-section, .avatar-role, .avatar-name { display: none; }
+      .main { margin-left: 60px; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .catalog-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .catalog-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<script>
+  const token = localStorage.getItem('token');
+  const user  = JSON.parse(localStorage.getItem('user') || '{}');
+  if (!token) window.location.href = 'dwms-login.html';
+</script>
+
+<div class="app">
+  <div class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" fill="white" opacity="0.9"/><rect x="9" y="1" width="6" height="6" rx="1" fill="white" opacity="0.6"/><rect x="1" y="9" width="6" height="6" rx="1" fill="white" opacity="0.6"/><rect x="9" y="9" width="6" height="6" rx="1" fill="white" opacity="0.35"/></svg></div>
+      <span class="brand-name">DWMS</span>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-section">Main</div>
+      <a href="dwms-dashboard.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" fill="currentColor"/><rect x="9" y="1" width="6" height="6" rx="1" fill="currentColor" opacity="0.5"/><rect x="1" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.5"/><rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.3"/></svg>Dashboard
+      </a>
+      <a href="dwms-data-sources.html" class="nav-item active">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Data sources
+      </a>
+      <a href="dwms-etl-pipelines.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M8 2v4l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/></svg>ETL pipelines
+      </a>
+      <a href="dwms-schema-manager.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="12" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>Schema manager
+      </a>
+      <a href="dwms-query-editor.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M5 7h6M5 10h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Query editor
+      </a>
+      <div class="nav-section">Admin</div>
+      <a href="dwms-user-management.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M2 14c0-3 2.7-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Users
+      </a>
+      <a href="dwms-setting.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 2v1.5M8 12.5V14M2 8h1.5M12.5 8H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Settings
+      </a>
+    </div>
+    <div class="sidebar-footer">
+      <div class="avatar-row">
+        <div class="avatar" id="userAvatar">AD</div>
+        <div>
+          <div class="avatar-name" id="userName">Admin</div>
+          <div class="avatar-role" id="userRole">Administrator</div>
+        </div>
+      </div>
+      <div style="margin-top:8px;">
+        <button onclick="logout()" style="width:100%;font-size:11px;padding:5px;border-radius:6px;border:0.5px solid rgba(255,255,255,0.2);background:transparent;color:#B5D4F4;cursor:pointer;">Sign out</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">Data sources</div>
+        <div class="topbar-sub">Connect and manage all your data sources in one place</div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-sm" onclick="syncAll()">↻ Sync all</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- KPI Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Total connectors</div>
+          <div class="kpi-value" id="kpiTotal">5</div>
+          <div class="kpi-sub">available</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Connected</div>
+          <div class="kpi-value" style="color:#3B6D11;" id="kpiConnected">0</div>
+          <div class="kpi-sub">active connections</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Total records</div>
+          <div class="kpi-value" id="kpiRecords">0</div>
+          <div class="kpi-sub">imported so far</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Last sync</div>
+          <div class="kpi-value" style="font-size:15px;" id="kpiLastSync">—</div>
+          <div class="kpi-sub">most recent</div>
+        </div>
+      </div>
+
+      <!-- Active Connections -->
+      <div class="section-header">
+        <div>
+          <div class="section-title">Active connections</div>
+          <div class="section-sub">Your connected data sources</div>
+        </div>
+      </div>
+      <div id="activeConnections">
+        <div class="empty-state">No active connections yet. Add a connector below to get started.</div>
+      </div>
+
+      <!-- Connector Catalog -->
+      <div class="section-header" style="margin-top:2rem;">
+        <div>
+          <div class="section-title">Available connectors</div>
+          <div class="section-sub">Choose a connector to start importing data</div>
+        </div>
+      </div>
+      <div class="catalog-grid" id="catalogGrid"></div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-icon" id="modalIcon">🔌</div>
+    <div class="modal-title" id="modalTitle">Configure connector</div>
+    <div class="modal-sub" id="modalSub">Set up your connection</div>
+    <div class="error-box" id="modalError"></div>
+    <div class="success-box" id="modalSuccess"></div>
+    <div id="modalFields"></div>
+    <div class="modal-footer">
+      <button class="btn-sm" onclick="closeModal()">Cancel</button>
+      <button class="btn-sm" id="testBtn" onclick="testConnection()">Test connection</button>
+      <button class="btn-primary" onclick="saveConnection()">Connect</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"><span id="toastMsg"></span></div>
+
+<script>
+  const API = 'https://dwms-backend-sqix.onrender.com';
+
+  /* ── Connector definitions ── */
+  const CONNECTORS = [
+    {
+      id: 'postgresql',
+      name: 'PostgreSQL',
+      type: 'SQL Database',
+      icon: '🐘',
+      bg: '#E1F5EE',
+      desc: 'Connect to PostgreSQL databases and sync tables into your warehouse.',
+      tags: ['db', 'free'],
+      fields: [
+        { id:'host', label:'Host', placeholder:'db.example.com' },
+        { id:'port', label:'Port', placeholder:'5432', type:'number' },
+        { id:'database', label:'Database name', placeholder:'mydb' },
+        { id:'username', label:'Username', placeholder:'postgres' },
+        { id:'password', label:'Password', placeholder:'••••••••', type:'password' },
+      ],
+      action: 'configure',
+    },
+    {
+      id: 'mysql',
+      name: 'MySQL',
+      type: 'SQL Database',
+      icon: '🐬',
+      bg: '#E6F1FB',
+      desc: 'Connect to MySQL or MariaDB databases and import your data.',
+      tags: ['db', 'free'],
+      fields: [
+        { id:'host', label:'Host', placeholder:'mysql.example.com' },
+        { id:'port', label:'Port', placeholder:'3306', type:'number' },
+        { id:'database', label:'Database name', placeholder:'mydb' },
+        { id:'username', label:'Username', placeholder:'root' },
+        { id:'password', label:'Password', placeholder:'••••••••', type:'password' },
+      ],
+      action: 'configure',
+    },
+    {
+      id: 'csv',
+      name: 'CSV / JSON Upload',
+      type: 'File Upload',
+      icon: '📄',
+      bg: '#FAEEDA',
+      desc: 'Upload CSV or JSON files and import them directly into your warehouse tables.',
+      tags: ['file', 'free'],
+      fields: [],
+      action: 'redirect',
+      redirect: 'dwms-etl-upload.html',
+    },
+    {
+      id: 'youtube',
+      name: 'YouTube API',
+      type: 'REST API',
+      icon: '▶️',
+      bg: '#FCEBEB',
+      desc: 'Extract video stats, channel data and analytics from YouTube Data API v3.',
+      tags: ['api', 'free'],
+      fields: [
+        { id:'api_key', label:'YouTube API Key', placeholder:'AIzaSy...', type:'password' },
+      ],
+      action: 'redirect',
+      redirect: 'dwms-youtube-etl.html',
+    },
+    {
+      id: 'google_sheets',
+      name: 'Google Sheets',
+      type: 'Cloud',
+      icon: '📊',
+      bg: '#EAF3DE',
+      desc: 'Sync data from Google Sheets spreadsheets into your warehouse automatically.',
+      tags: ['api', 'free'],
+      fields: [
+        { id:'sheet_id', label:'Spreadsheet ID', placeholder:'1BxiMVs0...' },
+        { id:'sheet_name', label:'Sheet name', placeholder:'Sheet1' },
+        { id:'credentials', label:'Service Account JSON', placeholder:'Paste JSON here...', type:'textarea' },
+      ],
+      action: 'configure',
+    },
+  ];
+
+  /* ── Local state (stored in localStorage) ── */
+  function getConnections() {
+    return JSON.parse(localStorage.getItem('dwms_connections') || '[]');
+  }
+
+  function saveConnections(conns) {
+    localStorage.setItem('dwms_connections', JSON.stringify(conns));
+  }
+
+  /* ── Init ── */
+  window.onload = function () {
+    if (user.firstName) {
+      const initials = user.firstName[0] + (user.lastName ? user.lastName[0] : '');
+      document.getElementById('userAvatar').textContent = initials.toUpperCase();
+      document.getElementById('userName').textContent   = user.firstName + ' ' + (user.lastName || '');
+      document.getElementById('userRole').textContent   = user.role || 'Viewer';
+    }
+    renderCatalog();
+    renderConnections();
+    updateKPIs();
+  };
+
+  function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = 'dwms-login.html';
+  }
+
+  /* ── Render catalog ── */
+  function renderCatalog() {
+    const connections = getConnections();
+    const connectedIds = connections.map(c => c.id);
+
+    document.getElementById('catalogGrid').innerHTML = CONNECTORS.map(c => `
+      <div class="catalog-card ${connectedIds.includes(c.id) ? 'connected' : ''}"
+           onclick="openConnector('${c.id}')">
+        <div class="catalog-top">
+          <div class="connector-icon" style="background:${c.bg};">${c.icon}</div>
+          ${connectedIds.includes(c.id)
+            ? `<span class="status-pill connected">Connected</span>`
+            : `<span class="status-pill not-connected">Not connected</span>`
+          }
+        </div>
+        <div class="connector-name">${c.name}</div>
+        <div class="connector-type">${c.type}</div>
+        <div class="connector-desc" style="margin-top:6px;">${c.desc}</div>
+        <div class="connector-meta">
+          ${c.tags.map(t => `<span class="meta-pill ${t}">${t === 'free' ? 'Free' : t === 'api' ? 'API' : t === 'db' ? 'Database' : 'File'}</span>`).join('')}
+        </div>
+        <div class="connector-footer">
+          <span style="font-size:11px;color:#888;">${connectedIds.includes(c.id) ? 'Click to manage' : 'Click to connect'}</span>
+          <span style="font-size:18px;">${c.icon}</span>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  /* ── Render active connections ── */
+  function renderConnections() {
+    const connections = getConnections();
+    const container   = document.getElementById('activeConnections');
+
+    if (!connections.length) {
+      container.innerHTML = `<div class="empty-state">No active connections yet. Add a connector below to get started.</div>`;
+      return;
+    }
+
+    container.innerHTML = `<div class="connections-list">` +
+      connections.map(conn => {
+        const def = CONNECTORS.find(c => c.id === conn.id) || {};
+        return `
+          <div class="connection-card">
+            <div class="connection-icon" style="background:${def.bg || '#f5f5f3'};">${def.icon || '🔌'}</div>
+            <div class="connection-info">
+              <div class="connection-name">${conn.name || def.name}</div>
+              <div class="connection-meta">${def.type} · Last sync: ${conn.lastSync || 'Never'}</div>
+              ${conn.syncing ? `<div class="sync-progress"><div class="sync-progress-fill" style="width:${conn.progress||50}%;"></div></div>` : ''}
+            </div>
+            <div class="connection-stats">
+              <div class="conn-stat">
+                <div class="conn-stat-value">${conn.records || '0'}</div>
+                <div class="conn-stat-label">Records</div>
+              </div>
+              <div class="conn-stat">
+                <div class="conn-stat-value">${conn.syncs || '0'}</div>
+                <div class="conn-stat-label">Syncs</div>
+              </div>
+            </div>
+            <div class="connection-actions">
+              <span class="status-pill ${conn.status || 'connected'}">${capitalize(conn.status || 'connected')}</span>
+              <button class="btn-sm" onclick="syncConnection('${conn.id}')">↻ Sync</button>
+              <button class="btn-danger" onclick="removeConnection('${conn.id}')">Remove</button>
+            </div>
+          </div>
+        `;
+      }).join('') + `</div>`;
+  }
+
+  /* ── Update KPIs ── */
+  function updateKPIs() {
+    const connections = getConnections();
+    document.getElementById('kpiConnected').textContent = connections.length;
+    document.getElementById('kpiRecords').textContent   = connections.reduce((s, c) => s + parseInt(c.records || 0), 0).toLocaleString();
+
+    const latest = connections.sort((a, b) => new Date(b.lastSyncDate || 0) - new Date(a.lastSyncDate || 0))[0];
+    document.getElementById('kpiLastSync').textContent  = latest?.lastSync || '—';
+  }
+
+  /* ── Open connector ── */
+  let currentConnectorId = null;
+
+  function openConnector(id) {
+    const def = CONNECTORS.find(c => c.id === id);
+    if (!def) return;
+
+    if (def.action === 'redirect') {
+      window.location.href = def.redirect;
+      return;
+    }
+
+    currentConnectorId = id;
+    document.getElementById('modalIcon').textContent  = def.icon;
+    document.getElementById('modalIcon').style.background = def.bg;
+    document.getElementById('modalTitle').textContent = `Connect to ${def.name}`;
+    document.getElementById('modalSub').textContent   = def.desc;
+    document.getElementById('modalError').style.display   = 'none';
+    document.getElementById('modalSuccess').style.display = 'none';
+
+    const connections = getConnections();
+    const existing    = connections.find(c => c.id === id);
+
+    document.getElementById('modalFields').innerHTML = def.fields.map(f => `
+      <div class="field">
+        <label>${f.label}</label>
+        ${f.type === 'textarea'
+          ? `<textarea id="mf_${f.id}" placeholder="${f.placeholder}" style="height:80px;padding:8px 10px;resize:none;border-radius:8px;border:0.5px solid #ccc;width:100%;font-family:inherit;font-size:12px;outline:none;">${existing?.config?.[f.id] || ''}</textarea>`
+          : `<input type="${f.type || 'text'}" id="mf_${f.id}" placeholder="${f.placeholder}" value="${existing?.config?.[f.id] || ''}" />`
+        }
+      </div>
+    `).join('') + `
+      <div class="field">
+        <label>Connection name</label>
+        <input type="text" id="mf_conn_name" placeholder="${def.name} — Production" value="${existing?.name || ''}" />
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Sync schedule</label>
+          <select id="mf_schedule">
+            <option ${existing?.schedule === 'Manual' ? 'selected' : ''}>Manual</option>
+            <option ${existing?.schedule === 'Every 15 min' ? 'selected' : ''}>Every 15 min</option>
+            <option ${existing?.schedule === 'Every 30 min' ? 'selected' : ''}>Every 30 min</option>
+            <option ${existing?.schedule === 'Every 1 hour' ? 'selected' : ''}>Every 1 hour</option>
+            <option ${existing?.schedule === 'Every 6 hours' ? 'selected' : ''}>Every 6 hours</option>
+            <option ${existing?.schedule === 'Daily' ? 'selected' : ''}>Daily</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Environment</label>
+          <select id="mf_env">
+            <option ${existing?.env === 'Production' ? 'selected' : ''}>Production</option>
+            <option ${existing?.env === 'Staging' ? 'selected' : ''}>Staging</option>
+            <option ${existing?.env === 'Development' ? 'selected' : ''}>Development</option>
+          </select>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('modal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('modal').classList.remove('open');
+    currentConnectorId = null;
+  }
+
+  /* ── Test connection ── */
+  function testConnection() {
+    const btn = document.getElementById('testBtn');
+    const err = document.getElementById('modalError');
+    const suc = document.getElementById('modalSuccess');
+    err.style.display = 'none';
+    suc.style.display = 'none';
+    btn.textContent   = 'Testing...';
+    btn.disabled      = true;
+
+    setTimeout(() => {
+      btn.textContent   = 'Test connection';
+      btn.disabled      = false;
+      suc.textContent   = '✅ Connection successful!';
+      suc.style.display = 'block';
+    }, 1500);
+  }
+
+  /* ── Save connection ── */
+  function saveConnection() {
+    const def  = CONNECTORS.find(c => c.id === currentConnectorId);
+    const err  = document.getElementById('modalError');
+    const suc  = document.getElementById('modalSuccess');
+    err.style.display = 'none';
+    suc.style.display = 'none';
+
+    const name = document.getElementById('mf_conn_name')?.value.trim() || def.name;
+
+    const config = {};
+    def.fields.forEach(f => {
+      const el = document.getElementById(`mf_${f.id}`);
+      if (el) config[f.id] = el.value.trim();
+    });
+
+    const connections = getConnections();
+    const existing    = connections.findIndex(c => c.id === currentConnectorId);
+
+    const conn = {
+      id:           currentConnectorId,
+      name:         name || def.name,
+      status:       'connected',
+      config,
+      schedule:     document.getElementById('mf_schedule')?.value || 'Manual',
+      env:          document.getElementById('mf_env')?.value || 'Production',
+      lastSync:     'Just now',
+      lastSyncDate: new Date().toISOString(),
+      records:      '0',
+      syncs:        existing >= 0 ? (parseInt(connections[existing].syncs || 0) + 1) : 1,
+    };
+
+    if (existing >= 0) {
+      connections[existing] = conn;
+    } else {
+      connections.push(conn);
+    }
+
+    saveConnections(connections);
+    showToast(`${def.name} connected successfully!`);
+    closeModal();
+    renderCatalog();
+    renderConnections();
+    updateKPIs();
+  }
+
+  /* ── Sync connection ── */
+  function syncConnection(id) {
+    const connections = getConnections();
+    const conn        = connections.find(c => c.id === id);
+    if (!conn) return;
+
+    conn.syncing  = true;
+    conn.progress = 0;
+    conn.status   = 'syncing';
+    saveConnections(connections);
+    renderConnections();
+    showToast(`Syncing ${conn.name}...`);
+
+    let prog = 0;
+    const iv = setInterval(() => {
+      prog += Math.floor(Math.random() * 12) + 5;
+      if (prog >= 100) {
+        prog = 100;
+        conn.syncing      = false;
+        conn.status       = 'connected';
+        conn.progress     = 100;
+        conn.lastSync     = 'Just now';
+        conn.lastSyncDate = new Date().toISOString();
+        conn.syncs        = (parseInt(conn.syncs || 0) + 1).toString();
+        clearInterval(iv);
+        saveConnections(connections);
+        renderConnections();
+        updateKPIs();
+        showToast(`${conn.name} synced successfully!`);
+        return;
+      }
+      conn.progress = prog;
+      saveConnections(connections);
+      renderConnections();
+    }, 400);
+  }
+
+  /* ── Sync all ── */
+  function syncAll() {
+    const connections = getConnections();
+    if (!connections.length) { showToast('No connections to sync.'); return; }
+    connections.forEach(c => syncConnection(c.id));
+  }
+
+  /* ── Remove connection ── */
+  function removeConnection(id) {
+    const def = CONNECTORS.find(c => c.id === id);
+    if (!confirm(`Remove ${def?.name || 'this'} connection?`)) return;
+    const connections = getConnections().filter(c => c.id !== id);
+    saveConnections(connections);
+    renderCatalog();
+    renderConnections();
+    updateKPIs();
+    showToast('Connection removed.');
+  }
+
+  /* ── Toast ── */
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    document.getElementById('toastMsg').textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  /* ── Helpers ── */
+  function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  document.getElementById('modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+</script>
+</body>
+</html>
