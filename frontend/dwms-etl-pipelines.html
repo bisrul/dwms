@@ -8,8 +8,6 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; }
     .app { display: flex; min-height: 100vh; }
-
-    /* ── Sidebar ── */
     .sidebar { width: 200px; background: #0C447C; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; }
     .sidebar-brand { display: flex; align-items: center; gap: 8px; padding: 1.25rem 1rem; border-bottom: 0.5px solid rgba(255,255,255,0.1); }
     .brand-icon { width: 28px; height: 28px; background: #378ADD; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
@@ -26,14 +24,11 @@
     .avatar { width: 28px; height: 28px; border-radius: 50%; background: #378ADD; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #fff; }
     .avatar-name { font-size: 12px; color: #fff; font-weight: 600; }
     .avatar-role { font-size: 10px; color: #85B7EB; }
-
-    /* ── Main ── */
     .main { flex: 1; margin-left: 200px; display: flex; flex-direction: column; min-height: 100vh; }
     .topbar { background: #fff; border-bottom: 0.5px solid #e0e0de; padding: 0.75rem 1.5rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
     .topbar-title { font-size: 15px; font-weight: 600; color: #1a1a1a; }
     .topbar-sub { font-size: 12px; color: #888; margin-top: 1px; }
-
-    /* ── Buttons ── */
+    .content { padding: 1.25rem 1.5rem; }
     .btn-primary { font-size: 12px; padding: 6px 14px; border-radius: 8px; border: none; background: #185FA5; color: #fff; cursor: pointer; font-family: inherit; font-weight: 600; }
     .btn-primary:hover { background: #0C447C; }
     .btn-sm { font-size: 11px; padding: 4px 10px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; color: #1a1a1a; cursor: pointer; font-family: inherit; }
@@ -42,28 +37,22 @@
     .btn-run:hover { background: #0C447C; }
     .btn-stop { font-size: 11px; padding: 4px 10px; border-radius: 8px; border: none; background: #A32D2D; color: #fff; cursor: pointer; font-family: inherit; }
     .btn-stop:hover { background: #791F1F; }
-
-    /* ── Content ── */
-    .content { flex: 1; padding: 1.25rem 1.5rem; }
-
-    /* ── KPI Cards ── */
+    .btn-danger { font-size: 11px; padding: 4px 10px; border-radius: 8px; border: none; background: #A32D2D; color: #fff; cursor: pointer; font-family: inherit; }
+    .btn-danger:hover { background: #791F1F; }
     .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.25rem; }
     .kpi-card { background: #fff; border: 0.5px solid #e0e0de; border-radius: 12px; padding: 1rem; }
     .kpi-label { font-size: 11px; color: #888; margin-bottom: 4px; }
     .kpi-value { font-size: 22px; font-weight: 600; color: #1a1a1a; }
     .kpi-sub { font-size: 11px; color: #888; margin-top: 3px; }
-
-    /* ── Section ── */
     .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
     .section-title { font-size: 13px; font-weight: 600; color: #1a1a1a; }
-
-    /* ── Pipeline Cards ── */
     .pipeline-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.25rem; }
     .pipeline-card { background: #fff; border: 0.5px solid #e0e0de; border-radius: 12px; padding: 1rem; }
     .pipeline-card.running  { border-left: 3px solid #185FA5; border-radius: 0 12px 12px 0; }
     .pipeline-card.error    { border-left: 3px solid #A32D2D; border-radius: 0 12px 12px 0; }
     .pipeline-card.idle     { border-left: 3px solid #888780; border-radius: 0 12px 12px 0; }
     .pipeline-card.success  { border-left: 3px solid #3B6D11; border-radius: 0 12px 12px 0; }
+    .pipeline-card.paused   { border-left: 3px solid #BA7517; border-radius: 0 12px 12px 0; }
     .pipeline-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
     .pipeline-name { font-size: 13px; font-weight: 600; color: #1a1a1a; }
     .pipeline-source { font-size: 11px; color: #888; margin-top: 1px; }
@@ -73,13 +62,12 @@
     .pill.success { background: #EAF3DE; color: #27500A; }
     .pill.error   { background: #FCEBEB; color: #791F1F; }
     .pill.idle    { background: #F1EFE8; color: #5F5E5A; }
+    .pill.paused  { background: #FAEEDA; color: #633806; }
     .progress-wrap { height: 4px; background: #f0f0ee; border-radius: 2px; margin: 8px 0; overflow: hidden; }
     .progress-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
     .pipeline-meta { display: flex; gap: 16px; }
     .meta-item { font-size: 11px; color: #888; }
     .meta-item span { color: #1a1a1a; font-weight: 600; }
-
-    /* ── Log ── */
     .log-card { background: #fff; border: 0.5px solid #e0e0de; border-radius: 12px; padding: 1rem; }
     .log-body { background: #1a1a1a; border-radius: 8px; padding: 0.75rem; margin-top: 0.75rem; font-family: 'Courier New', monospace; font-size: 11px; line-height: 1.7; max-height: 200px; overflow-y: auto; }
     .log-line { display: flex; gap: 10px; }
@@ -88,7 +76,25 @@
     .log-text.success { color: #97C459; }
     .log-text.error   { color: #F09595; }
     .log-text.warn    { color: #EF9F27; }
-
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: #fff; border-radius: 14px; padding: 1.5rem; width: 500px; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
+    .modal-title { font-size: 16px; font-weight: 600; color: #1a1a1a; margin-bottom: 0.25rem; }
+    .modal-sub { font-size: 12px; color: #888; margin-bottom: 1.5rem; }
+    .field { margin-bottom: 0.9rem; }
+    .field label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 5px; }
+    .field input, .field select, .field textarea { width: 100%; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; padding: 0 10px; font-size: 13px; color: #1a1a1a; font-family: inherit; outline: none; transition: border-color 0.15s; height: 38px; }
+    .field textarea { height: 80px; padding: 8px 10px; resize: none; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,0.12); }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1.25rem; }
+    .error-box { font-size: 12px; color: #a32d2d; padding: 8px 10px; background: #fcebeb; border-radius: 8px; border: 0.5px solid #f09595; margin-bottom: 1rem; display: none; }
+    .source-option { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 0.5px solid #e0e0de; border-radius: 8px; cursor: pointer; margin-bottom: 6px; transition: all 0.15s; }
+    .source-option:hover { border-color: #185FA5; background: #f5f5f3; }
+    .source-option.active { border-color: #185FA5; background: #E6F1FB; }
+    .source-option-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+    .source-option-name { font-size: 13px; font-weight: 600; color: #1a1a1a; }
+    .source-option-type { font-size: 11px; color: #888; }
     @media (max-width: 900px) {
       .sidebar { width: 60px; }
       .brand-name, .nav-section, .avatar-role, .avatar-name { display: none; }
@@ -98,16 +104,14 @@
   </style>
 </head>
 <body>
-  <script>
-      const token = localStorage.getItem('token');
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      if (!token) {
-        window.location.href = 'dwms-login.html';
-      }
-    </script>
-<div class="app">
 
-  <!-- Sidebar -->
+<script>
+  const token = localStorage.getItem('token');
+  const user  = JSON.parse(localStorage.getItem('user') || '{}');
+  if (!token) window.location.href = 'dwms-login.html';
+</script>
+
+<div class="app">
   <div class="sidebar">
     <div class="sidebar-brand">
       <div class="brand-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" fill="white" opacity="0.9"/><rect x="9" y="1" width="6" height="6" rx="1" fill="white" opacity="0.6"/><rect x="1" y="9" width="6" height="6" rx="1" fill="white" opacity="0.6"/><rect x="9" y="9" width="6" height="6" rx="1" fill="white" opacity="0.35"/></svg></div>
@@ -116,246 +120,432 @@
     <div class="sidebar-nav">
       <div class="nav-section">Main</div>
       <a href="dwms-dashboard.html" class="nav-item">
-        <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" fill="currentColor"/><rect x="9" y="1" width="6" height="6" rx="1" fill="currentColor" opacity="0.5"/><rect x="1" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.5"/><rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.3"/></svg>
-        Dashboard
+        <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" fill="currentColor"/><rect x="9" y="1" width="6" height="6" rx="1" fill="currentColor" opacity="0.5"/><rect x="1" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.5"/><rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.3"/></svg>Dashboard
       </a>
-      <a href="dwms-data-resource.html" class="nav-item">
-        <svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        Data sources
+      <a href="dwms-data-sources.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Data sources
       </a>
-      <a href="#" class="nav-item active">
-        <svg viewBox="0 0 16 16" fill="none"><path d="M8 2v4l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/></svg>
-        ETL pipelines
-      </a>
-      <a href="dwms-etl-upload.html" class="nav-item">
-        <svg viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 5l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        ETL upload
-      </a>
-      <a href="dwms-youtube-etl.html" class="nav-item active">
-        <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 6l5 2.5L6 11V6z" fill="currentColor"/></svg>
-        YouTube ETL
+      <a href="dwms-etl-pipelines.html" class="nav-item active">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M8 2v4l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/></svg>ETL pipelines
       </a>
       <a href="dwms-schema-manager.html" class="nav-item">
-        <svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Schema manager
+        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="12" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>Schema manager
       </a>
       <a href="dwms-query-editor.html" class="nav-item">
-        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M5 7h6M5 10h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        Query editor
+        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M5 7h6M5 10h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Query editor
       </a>
       <div class="nav-section">Admin</div>
       <a href="dwms-user-management.html" class="nav-item">
-        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M2 14c0-3 2.7-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        Users
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M2 14c0-3 2.7-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Users
       </a>
       <a href="dwms-setting.html" class="nav-item">
-        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 2v1.5M8 12.5V14M2 8h1.5M12.5 8H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        Settings
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 2v1.5M8 12.5V14M2 8h1.5M12.5 8H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Settings
       </a>
     </div>
     <div class="sidebar-footer">
       <div class="avatar-row">
         <div class="avatar" id="userAvatar">AD</div>
-        <div class="avatar-info">
+        <div>
           <div class="avatar-name" id="userName">Admin</div>
           <div class="avatar-role" id="userRole">Administrator</div>
         </div>
       </div>
       <div style="margin-top:8px;">
-        <button onclick="logout()" style="width:100%;font-size:11px;padding:5px;border-radius:6px;border:0.5px solid rgba(255,255,255,0.2);background:transparent;color:#B5D4F4;cursor:pointer;">
-          Sign out
-        </button>
+        <button onclick="logout()" style="width:100%;font-size:11px;padding:5px;border-radius:6px;border:0.5px solid rgba(255,255,255,0.2);background:transparent;color:#B5D4F4;cursor:pointer;">Sign out</button>
       </div>
     </div>
   </div>
 
-  <!-- Main -->
   <div class="main">
     <div class="topbar">
       <div>
         <div class="topbar-title">ETL pipelines</div>
-        <div class="topbar-sub">Manage your data ingestion workflows</div>
+        <div class="topbar-sub">Manage and schedule your data ingestion workflows</div>
       </div>
-      <button class="btn-primary" onclick="alert('Add new pipeline form — connect to your backend here!')">+ New pipeline</button>
+      <button class="btn-primary" onclick="openNewPipeline()">+ New pipeline</button>
     </div>
 
     <div class="content">
 
-      <!-- KPI Cards -->
       <div class="kpi-grid">
         <div class="kpi-card">
           <div class="kpi-label">Total pipelines</div>
-          <div class="kpi-value">6</div>
+          <div class="kpi-value" id="kpiTotal">—</div>
           <div class="kpi-sub">across all sources</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Running now</div>
-          <div class="kpi-value" style="color:#185FA5;" id="runningCount">2</div>
+          <div class="kpi-value" style="color:#185FA5;" id="kpiRunning">—</div>
           <div class="kpi-sub">active jobs</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Records today</div>
-          <div class="kpi-value">1.84M</div>
-          <div class="kpi-sub">+8% vs yesterday</div>
+          <div class="kpi-label">Scheduled</div>
+          <div class="kpi-value" id="kpiScheduled">—</div>
+          <div class="kpi-sub">auto-run pipelines</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Errors today</div>
-          <div class="kpi-value" style="color:#A32D2D;">1</div>
-          <div class="kpi-sub">Logs ETL failed</div>
+          <div class="kpi-label">Errors</div>
+          <div class="kpi-value" style="color:#A32D2D;" id="kpiErrors">—</div>
+          <div class="kpi-sub">need attention</div>
         </div>
       </div>
 
-      <!-- Pipeline List -->
       <div class="section-header">
         <div class="section-title">All pipelines</div>
         <div style="display:flex;gap:6px;">
-          <button class="btn-sm" onclick="filterPipelines('all')">All</button>
-          <button class="btn-sm" onclick="filterPipelines('running')">Running</button>
-          <button class="btn-sm" onclick="filterPipelines('error')">Errors</button>
+          <button class="btn-sm" id="filterAll" onclick="filterPipelines('all',this)">All</button>
+          <button class="btn-sm" id="filterRunning" onclick="filterPipelines('running',this)">Running</button>
+          <button class="btn-sm" id="filterError" onclick="filterPipelines('error',this)">Errors</button>
+          <button class="btn-sm" onclick="loadPipelines()">↻ Refresh</button>
         </div>
       </div>
-      <div class="pipeline-list" id="pipelineList"></div>
 
-      <!-- Log Viewer -->
+      <div class="pipeline-list" id="pipelineList">
+        <div style="text-align:center;padding:2rem;color:#aaa;font-size:13px;">Loading pipelines...</div>
+      </div>
+
       <div class="log-card">
         <div class="section-header" style="margin-bottom:0;">
-          <div class="section-title">Live log — <span id="logPipelineName" style="color:#888;font-weight:400;">Sales ETL</span></div>
+          <div class="section-title">Live log — <span id="logPipelineName" style="color:#888;font-weight:400;">select a pipeline</span></div>
           <button class="btn-sm" onclick="clearLog()">Clear</button>
         </div>
-        <div class="log-body" id="logBody"></div>
+        <div class="log-body" id="logBody">
+          <div class="log-line"><span class="log-time">—</span><span class="log-text info">Click "Logs" on any pipeline to view logs here</span></div>
+        </div>
       </div>
 
     </div>
   </div>
 </div>
 
+<!-- New Pipeline Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-title">New pipeline</div>
+    <div class="modal-sub">Create a data ingestion pipeline from your connected sources</div>
+    <div class="error-box" id="modalError"></div>
+
+    <div class="field">
+      <label>Pipeline name</label>
+      <input type="text" id="pName" placeholder="e.g. Sales ETL, CRM Sync" />
+    </div>
+
+    <div class="field">
+      <label>Data source</label>
+      <div id="sourceOptions"></div>
+      <div style="margin-top:6px;">
+        <a href="dwms-data-sources.html" style="font-size:11px;color:#185FA5;">+ Connect a new data source first</a>
+      </div>
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label>Target table</label>
+        <select id="pTargetTable">
+          <option value="">Auto-create table</option>
+          <option>fact_sales</option>
+          <option>dim_product</option>
+          <option>dim_customer</option>
+          <option>dim_date</option>
+          <option>dim_region</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Schedule</label>
+        <select id="pSchedule">
+          <option>Manual</option>
+          <option>Every 15 min</option>
+          <option>Every 30 min</option>
+          <option>Every 1 hour</option>
+          <option>Every 6 hours</option>
+          <option>Daily</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>SQL query (optional)</label>
+      <textarea id="pQuery" placeholder="SELECT * FROM table WHERE updated_at > NOW() - INTERVAL '1 day'"></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-sm" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="createPipeline()">Create pipeline</button>
+    </div>
+  </div>
+</div>
+
 <script>
-  const pipelines = [
-    { id:1, name:'Sales ETL',      source:'PostgreSQL', schedule:'Every 30 min',  records:'1.2M',  status:'running', progress:62,  lastRun:'2 min ago' },
-    { id:2, name:'CRM Sync',       source:'REST API',   schedule:'Every 1 hour',  records:'340K',  status:'running', progress:35,  lastRun:'5 min ago' },
-    { id:3, name:'Analytics DW',   source:'BigQuery',   schedule:'Every 6 hours', records:'2.1M',  status:'success', progress:100, lastRun:'1 hour ago' },
-    { id:4, name:'Inventory',      source:'CSV Upload', schedule:'Manual',        records:'88K',   status:'idle',    progress:0,   lastRun:'3 hours ago' },
-    { id:5, name:'Logs ETL',       source:'S3 Bucket',  schedule:'Every 1 hour',  records:'560K',  status:'error',   progress:28,  lastRun:'18 min ago' },
-    { id:6, name:'Finance Report', source:'MySQL',      schedule:'Daily 02:00',   records:'210K',  status:'success', progress:100, lastRun:'6 hours ago' },
-  ];
-
+  const API         = 'https://dwms-backend-sqix.onrender.com';
+  let allPipelines  = [];
   let currentFilter = 'all';
+  let selectedSource = null;
+  let pollInterval  = null;
 
-  const logs = [
-    { time:'09:41:02', text:'[Sales ETL] Pipeline started — connecting to PostgreSQL', type:'info' },
-    { time:'09:41:03', text:'[Sales ETL] Connection established successfully', type:'success' },
-    { time:'09:41:05', text:'[Sales ETL] Extracting records from sales_transactions...', type:'info' },
-    { time:'09:38:44', text:'[Logs ETL] ERROR: Connection timeout after 30s', type:'error' },
-    { time:'09:38:44', text:'[Logs ETL] Pipeline aborted — retrying in 5 minutes', type:'warn' },
-    { time:'09:35:10', text:'[CRM Sync] Fetching page 1 of 12 from API...', type:'info' },
-    { time:'09:35:12', text:'[CRM Sync] 340K records transformed successfully', type:'success' },
-  ];
+  window.onload = function () {
+    if (user.firstName) {
+      const initials = user.firstName[0] + (user.lastName ? user.lastName[0] : '');
+      document.getElementById('userAvatar').textContent = initials.toUpperCase();
+      document.getElementById('userName').textContent   = user.firstName + ' ' + (user.lastName || '');
+      document.getElementById('userRole').textContent   = user.role || 'Viewer';
+    }
+    loadPipelines();
+    pollInterval = setInterval(loadPipelines, 5000);
+  };
+
+  function logout() {
+    clearInterval(pollInterval);
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = 'dwms-login.html';
+  }
+
+  async function loadPipelines() {
+    try {
+      const res  = await fetch(`${API}/api/pipelines`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.error) return;
+      allPipelines = Array.isArray(data) ? data : [];
+      renderPipelines();
+      updateKPIs();
+    } catch (err) {
+      console.error('Load pipelines error:', err);
+    }
+  }
 
   function renderPipelines() {
     const list = document.getElementById('pipelineList');
-    const filtered = currentFilter === 'all' ? pipelines : pipelines.filter(p => p.status === currentFilter);
+    const filtered = currentFilter === 'all'
+      ? allPipelines
+      : allPipelines.filter(p => p.status === currentFilter);
+
+    if (!filtered.length) {
+      list.innerHTML = `<div style="text-align:center;padding:2rem;color:#aaa;font-size:13px;">
+        ${currentFilter === 'all'
+          ? 'No pipelines yet. Click <strong>+ New pipeline</strong> to create one.'
+          : `No ${currentFilter} pipelines.`}
+      </div>`;
+      return;
+    }
+
     list.innerHTML = filtered.map(p => `
       <div class="pipeline-card ${p.status}">
         <div class="pipeline-top">
           <div>
             <div class="pipeline-name">${p.name}</div>
-            <div class="pipeline-source">${p.source} &middot; ${p.schedule}</div>
+            <div class="pipeline-source">${p.source} · ${p.schedule || 'Manual'}</div>
           </div>
           <div class="pipeline-actions">
-            <span class="pill ${p.status}">${p.status.charAt(0).toUpperCase()+p.status.slice(1)}</span>
+            <span class="pill ${p.status}">${capitalize(p.status)}</span>
             ${p.status === 'running'
               ? `<button class="btn-stop" onclick="stopPipeline(${p.id})">Stop</button>`
-              : `<button class="btn-run" onclick="runPipeline(${p.id})">Run</button>`}
-            <button class="btn-sm" onclick="showLog('${p.name}')">Logs</button>
+              : `<button class="btn-run"  onclick="runPipeline(${p.id})">Run</button>`
+            }
+            <button class="btn-sm" onclick="showLogs(${p.id},'${p.name.replace(/'/g,"\\'")}')">Logs</button>
+            <button class="btn-danger" onclick="deletePipeline(${p.id})">✕</button>
           </div>
         </div>
         <div class="progress-wrap">
-          <div class="progress-fill" style="width:${p.progress}%;background:${
-            p.status==='error'?'#A32D2D':p.status==='success'?'#3B6D11':p.status==='running'?'#185FA5':'#888780'
+          <div class="progress-fill" style="width:${p.progress||0}%;background:${
+            p.status==='error'   ? '#A32D2D' :
+            p.status==='success' ? '#3B6D11' :
+            p.status==='running' ? '#185FA5' :
+            p.status==='paused'  ? '#BA7517' : '#888780'
           };"></div>
         </div>
         <div class="pipeline-meta">
-          <div class="meta-item">Records: <span>${p.records}</span></div>
-          <div class="meta-item">Progress: <span>${p.progress}%</span></div>
-          <div class="meta-item">Last run: <span>${p.lastRun}</span></div>
+          <div class="meta-item">Records: <span>${p.records || '0'}</span></div>
+          <div class="meta-item">Progress: <span>${p.progress || 0}%</span></div>
+          <div class="meta-item">Last run: <span>${p.last_run ? timeAgo(p.last_run) : 'Never'}</span></div>
+          ${p.schedule && p.schedule !== 'Manual'
+            ? `<div class="meta-item">Schedule: <span>${p.schedule}</span></div>` : ''}
         </div>
       </div>
     `).join('');
-
-    document.getElementById('runningCount').textContent = pipelines.filter(p => p.status === 'running').length;
   }
 
-  function filterPipelines(f) { currentFilter = f; renderPipelines(); }
-
-  function runPipeline(id) {
-    const p = pipelines.find(x => x.id === id);
-    p.status = 'running'; p.progress = 0;
-    renderPipelines();
-    addLog(`[${p.name}] Pipeline started manually`, 'info');
-    let prog = 0;
-    const iv = setInterval(() => {
-      prog += Math.floor(Math.random() * 8) + 3;
-      if (prog >= 100) {
-        prog = 100; p.status = 'success'; p.progress = 100;
-        clearInterval(iv);
-        addLog(`[${p.name}] Completed successfully`, 'success');
-        renderPipelines(); return;
-      }
-      p.progress = prog; renderPipelines();
-    }, 600);
+  function updateKPIs() {
+    document.getElementById('kpiTotal').textContent     = allPipelines.length;
+    document.getElementById('kpiRunning').textContent   = allPipelines.filter(p => p.status === 'running').length;
+    document.getElementById('kpiScheduled').textContent = allPipelines.filter(p => p.schedule && p.schedule !== 'Manual').length;
+    document.getElementById('kpiErrors').textContent    = allPipelines.filter(p => p.status === 'error').length;
   }
 
-  function stopPipeline(id) {
-    const p = pipelines.find(x => x.id === id);
-    p.status = 'idle'; p.progress = 0;
-    renderPipelines();
-    addLog(`[${p.name}] Pipeline stopped by user`, 'warn');
-  }
-
-  function addLog(text, type) {
-    const now = new Date();
-    const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
-    logs.unshift({ time, text, type });
-    renderLog();
-  }
-
-  function renderLog() {
-    const body = document.getElementById('logBody');
-    body.innerHTML = logs.slice(0,30).map(l =>
-      `<div class="log-line"><span class="log-time">${l.time}</span><span class="log-text ${l.type}">${l.text}</span></div>`
-    ).join('');
-  }
-
-  function showLog(name) {
-    document.getElementById('logPipelineName').textContent = name;
-  }
-
-  function clearLog() { logs.length = 0; renderLog(); }
-
-  renderPipelines();
-  renderLog();
-
-  setInterval(() => {
-    pipelines.filter(p => p.status === 'running').forEach(p => {
-      p.progress = Math.min(100, p.progress + 1);
-      if (p.progress === 100) { p.status = 'success'; addLog(`[${p.name}] Completed successfully`, 'success'); }
+  function filterPipelines(f, btn) {
+    currentFilter = f;
+    document.querySelectorAll('.section-header .btn-sm').forEach(b => {
+      b.style.background  = '';
+      b.style.color       = '';
+      b.style.borderColor = '';
     });
+    if (btn) {
+      btn.style.background  = '#185FA5';
+      btn.style.color       = '#fff';
+      btn.style.borderColor = '#185FA5';
+    }
     renderPipelines();
-  }, 1200);
+  }
 
-  window.onload = function() {
-    if (user.firstName) {
-      const initials = user.firstName[0] + (user.lastName ? user.lastName[0] : '');
-      document.getElementById('userAvatar').textContent = initials.toUpperCase();
-      document.getElementById('userName').textContent = user.firstName + ' ' + user.lastName;
-      document.getElementById('userRole').textContent = user.role || 'Viewer';
+  async function runPipeline(id) {
+    try {
+      const res  = await fetch(`${API}/api/pipelines/${id}/run`, {
+        method: 'PUT', headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.error) { alert(data.error); return; }
+      loadPipelines();
+    } catch (err) { alert('Failed to start pipeline.'); }
+  }
+
+  async function stopPipeline(id) {
+    try {
+      await fetch(`${API}/api/pipelines/${id}/stop`, {
+        method: 'PUT', headers: { 'Authorization': `Bearer ${token}` }
+      });
+      loadPipelines();
+    } catch (err) { alert('Failed to stop pipeline.'); }
+  }
+
+  async function deletePipeline(id) {
+    if (!confirm('Delete this pipeline? This cannot be undone.')) return;
+    try {
+      await fetch(`${API}/api/pipelines/${id}`, {
+        method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }
+      });
+      loadPipelines();
+    } catch (err) { alert('Failed to delete pipeline.'); }
+  }
+
+  async function showLogs(id, name) {
+    document.getElementById('logPipelineName').textContent = name;
+    try {
+      const res  = await fetch(`${API}/api/pipelines/${id}/logs`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      const body = document.getElementById('logBody');
+      if (!Array.isArray(data) || !data.length) {
+        body.innerHTML = `<div class="log-line"><span class="log-time">—</span><span class="log-text info">No logs yet</span></div>`;
+        return;
+      }
+      body.innerHTML = data.map(l => {
+        const t    = new Date(l.created_at);
+        const time = `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}:${String(t.getSeconds()).padStart(2,'0')}`;
+        return `<div class="log-line"><span class="log-time">${time}</span><span class="log-text ${l.level||'info'}">${l.message}</span></div>`;
+      }).join('');
+    } catch (err) {
+      document.getElementById('logBody').innerHTML = `<div class="log-line"><span class="log-text error">Failed to load logs</span></div>`;
     }
   }
 
-  function logout() {
-    localStorage.removeItem('token');      
-    localStorage.removeItem('user');
-    window.location.href = 'dwms-login.html';
+  function clearLog() {
+    document.getElementById('logBody').innerHTML = '';
+    document.getElementById('logPipelineName').textContent = 'select a pipeline';
   }
+
+  function openNewPipeline() {
+    selectedSource = null;
+    document.getElementById('modalError').style.display = 'none';
+    document.getElementById('pName').value  = '';
+    document.getElementById('pQuery').value = '';
+    loadSourceOptions();
+    document.getElementById('modal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('modal').classList.remove('open');
+  }
+
+  function loadSourceOptions() {
+    const connections = JSON.parse(localStorage.getItem('dwms_connections') || '[]');
+    const container   = document.getElementById('sourceOptions');
+    const icons = {
+      postgresql: { icon:'🐘', bg:'#E1F5EE' },
+      mysql:      { icon:'🐬', bg:'#E6F1FB' },
+      csv:        { icon:'📄', bg:'#FAEEDA' },
+      youtube:    { icon:'▶️', bg:'#FCEBEB' },
+      google_sheets: { icon:'📊', bg:'#EAF3DE' },
+    };
+
+    if (!connections.length) {
+      container.innerHTML = `
+        <div style="font-size:12px;color:#888;padding:1rem;text-align:center;border:0.5px dashed #ccc;border-radius:8px;">
+          No connected sources yet.<br>
+          <a href="dwms-data-sources.html" style="color:#185FA5;">→ Go to Data Sources to add one</a>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = connections.map(c => {
+      const def = icons[c.id] || { icon:'🔌', bg:'#f5f5f3' };
+      return `
+        <div class="source-option" id="src_${c.id}" onclick="selectSource('${c.id}','${c.name.replace(/'/g,"\\'")}')">
+          <div class="source-option-icon" style="background:${def.bg};">${def.icon}</div>
+          <div>
+            <div class="source-option-name">${c.name}</div>
+            <div class="source-option-type">${c.schedule} · ${c.env}</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function selectSource(id, name) {
+    selectedSource = { id, name };
+    document.querySelectorAll('.source-option').forEach(el => el.classList.remove('active'));
+    const el = document.getElementById(`src_${id}`);
+    if (el) el.classList.add('active');
+  }
+
+  async function createPipeline() {
+    const name     = document.getElementById('pName').value.trim();
+    const schedule = document.getElementById('pSchedule').value;
+    const target   = document.getElementById('pTargetTable').value;
+    const query    = document.getElementById('pQuery').value.trim();
+    const err      = document.getElementById('modalError');
+    err.style.display = 'none';
+
+    if (!name)           { err.textContent = 'Pipeline name is required.'; err.style.display = 'block'; return; }
+    if (!selectedSource) { err.textContent = 'Please select a data source.'; err.style.display = 'block'; return; }
+
+    try {
+      const res  = await fetch(`${API}/api/pipelines`, {
+        method:  'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          source:       selectedSource.name,
+          source_id:    selectedSource.id,
+          schedule,
+          target_table: target || null,
+          query:        query  || null,
+        })
+      });
+      const data = await res.json();
+      if (data.error) { err.textContent = data.error; err.style.display = 'block'; return; }
+
+      closeModal();
+      loadPipelines();
+    } catch (e) {
+      err.textContent = 'Failed to create pipeline. Make sure backend is running.';
+      err.style.display = 'block';
+    }
+  }
+
+  function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+
+  function timeAgo(dateStr) {
+    const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+    if (diff < 60)    return `${diff}s ago`;
+    if (diff < 3600)  return `${Math.floor(diff/60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+    return `${Math.floor(diff/86400)}d ago`;
+  }
+
+  document.getElementById('modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
 </script>
 </body>
 </html>
